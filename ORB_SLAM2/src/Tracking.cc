@@ -282,11 +282,11 @@ void Tracking::Track()
             StereoInitialization();
         else
             MonocularInitialization();
-
         mpFrameDrawer->Update(this);
 
-        if(mState!=OK)
+        if(mState!=OK) {
             return;
+        }
     }
     else
     {
@@ -502,7 +502,6 @@ void Tracking::Track()
         mlFrameTimes.push_back(mlFrameTimes.back());
         mlbLost.push_back(mState==LOST);
     }
-
 }
 
 
@@ -540,7 +539,6 @@ void Tracking::StereoInitialization()
         cout << "New map created with " << mpMap->MapPointsInMap() << " points" << endl;
 
         mpLocalMapper->InsertKeyFrame(pKFini);
-
         mLastFrame = Frame(mCurrentFrame);
         mnLastKeyFrameId=mCurrentFrame.mnId;
         mpLastKeyFrame = pKFini;
