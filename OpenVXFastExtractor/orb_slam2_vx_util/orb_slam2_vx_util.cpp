@@ -4,7 +4,6 @@
 
 #include "orb_slam2_vx_util.hpp"
 #include <stdio.h>
-#include <iostream>
 
 extern "C" {
     #define ERROR_CHECK_STATUS( status ) { \
@@ -47,8 +46,6 @@ vx_array createUMax(vx_context context) {
         ++v0;
     }
     ERROR_CHECK_STATUS(vxAddArrayItems(u_max, HALF_PATCH_SIZE + 1, u_max_data.data(), sizeof(vx_int32)));
-    for (auto e: u_max_data) {
-        std::cout << e << std::endl;
-    }
+
     return u_max;
 }
