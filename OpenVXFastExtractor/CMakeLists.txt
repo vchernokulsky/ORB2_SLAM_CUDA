@@ -40,10 +40,19 @@
 cmake_minimum_required(VERSION 3.17)
 project(OpenVXFastExtractor)
 
-IF(CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -m64 -O3 -fuse-ld=gold")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -m64 -O3 -fuse-ld=gold")
-ENDIF(CMAKE_BUILD_TYPE STREQUAL "Release")
+message("processor: " ${CMAKE_SYSTEM_PROCESSOR} )
+
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -fuse-ld=gold")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -O3 -fuse-ld=gold")
+    if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
+    elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a+fp+simd+crc -mcpu=cortex-a57+crc")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfloat-abi=hard -march=armv8-a+fp+simd+crc -mcpu=cortex-a57+crc")
+    endif()
+endif()
 
 message(STATUS "cxx flags:" ${CMAKE_CXX_FLAGS})
 message(STATUS "c flags:" ${CMAKE_C_FLAGS})
@@ -53,9 +62,10 @@ set(CMAKE_CUDA_HOST_COMPILER "g++")
 set(CMAKE_CUDA_FLAGS "-Xcompiler -O3 -cudart shared -arch=sm_53 -use_fast_math --fmad true -Xptxas -v -O3")
 set(VISIONWORKS_DIR 1)
 
-set(${OpenCV_VERSION} 4.1.0)
+set(OpenCV_VERSION 4.1.0)
 enable_language(CUDA)
 
+message(STATUS "OpenCV:" ${OpenCV_VERSION})
 message(STATUS "cuda flags:" ${CMAKE_CUDA_FLAGS})
 
 find_package(OpenCV ${OpenCV_VERSION} REQUIRED)
