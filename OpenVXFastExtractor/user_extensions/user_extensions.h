@@ -2,12 +2,12 @@
 // Created by denis on 16.02.2021.
 //
 
-#ifndef OPENVXFASTEXTRACTOR_USER_EXTENSIONS_HPP
-#define OPENVXFASTEXTRACTOR_USER_EXTENSIONS_HPP
+#ifndef OPENVXFASTEXTRACTOR_USER_EXTENSIONS_H
+#define OPENVXFASTEXTRACTOR_USER_EXTENSIONS_H
 
 #include <opencv2/core.hpp>
 
-#include "kernels/cpu/IC_Angle.hpp"
+#include "kernels/IC_Angles.h"
 
 #include "VX/vx.h"
 
@@ -28,7 +28,8 @@
     }
 
 vx_status registerUserExtensions(vx_context context);
+
 vx_node
 IC_AnglesNode(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array output_keypoints, vx_array u_max);
 
-#endif //OPENVXFASTEXTRACTOR_USER_EXTENSIONS_HPP
+#endif //OPENVXFASTEXTRACTOR_USER_EXTENSIONS_H

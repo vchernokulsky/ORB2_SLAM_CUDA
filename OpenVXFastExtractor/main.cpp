@@ -6,9 +6,9 @@
 #include <string>
 #include <vector>
 
-#include "opencv_interop.h"
-#include "user_extensions.hpp"
-#include "orb_slam2_vx_util.hpp"
+#include "opencv_util/opencv_interop.h"
+#include "user_extensions/user_extensions.h"
+#include "orb_slam2_vx_util/orb_slam2_vx_util.hpp"
 
 #include "VX/vx.h"
 #include "NVX/nvx.h"

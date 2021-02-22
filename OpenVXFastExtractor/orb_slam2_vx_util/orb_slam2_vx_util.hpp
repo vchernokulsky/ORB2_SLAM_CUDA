@@ -7,7 +7,7 @@
 
 #include "VX/vx.h"
 
-#include "user_extensions.hpp"
+#include "../user_extensions/user_extensions.h"
 #include <vector>
 #include <cmath>
 
