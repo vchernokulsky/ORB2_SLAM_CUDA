@@ -6,9 +6,7 @@
 #define OPENVXFASTEXTRACTOR_USER_EXTENSIONS_H
 
 #include <opencv2/core.hpp>
-
 #include "kernels/IC_Angles.h"
-
 #include "VX/vx.h"
 
 #define ERROR_CHECK_STATUS( status ) { \
@@ -30,6 +28,6 @@
 vx_status registerUserExtensions(vx_context context);
 
 vx_node
-IC_AnglesNode(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array output_keypoints, vx_array u_max);
+IC_AnglesNode(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array u_max, vx_array output_keypoints);
 
 #endif //OPENVXFASTEXTRACTOR_USER_EXTENSIONS_H

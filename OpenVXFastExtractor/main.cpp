@@ -8,10 +8,10 @@
 
 #include "opencv_util/opencv_interop.h"
 #include "user_extensions/user_extensions.h"
-#include "orb_slam2_vx_util/orb_slam2_vx_util.hpp"
 
 #include "VX/vx.h"
 #include "NVX/nvx.h"
+#include "NVX/nvxcu.h"
 
 #include<unistd.h>
 
@@ -94,8 +94,7 @@ int main(void) {
         nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 9, fast_strength_thresh, 6, num_corners.at(i));
     }
 
-    vx_array u_max = createUMax(context);
-
+    vx_array u_max = createUMax(context, HALF_PATCH_SIZE);
     std::vector<vx_array> IC_AnglesCorners(levelsNum);
     {
         vx_size vxArraySize = 30 * 1000;

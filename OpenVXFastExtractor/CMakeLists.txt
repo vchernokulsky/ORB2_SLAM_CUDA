@@ -37,16 +37,12 @@
 #    user_extensions
 #)
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.17)
 project(OpenVXFastExtractor)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 message(STATUS "architecture: " ${CMAKE_SYSTEM_PROCESSOR} )
-
-if(NOT CMAKE_BUILD_TYPE)
-    SET(CMAKE_BUILD_TYPE Release)
-endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     string(APPEND CMAKE_CXX_FLAGS "-std=c++11 -O3 -fuse-ld=gold")
@@ -60,16 +56,19 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release")
     endif()
 endif()
 
+add_definitions (-DIC_ANGLES_GPU)
+
 set(CMAKE_CUDA_COMPILER "/usr/local/cuda-10.2/bin/nvcc")
 set(CMAKE_CUDA_HOST_COMPILER "g++")
-string(APPEND CUDA_NVCC_FLAGS "-cudart shared; -std=c++11; -O3; -gencode arch=compute_60,code=sm_60")
+string( APPEND CMAKE_CUDA_FLAGS "-Xcompiler -O3 -cudart static -gencode arch=compute_62,code=sm_62 -use_fast_math --fmad true -Xptxas -O3")
+
 set(CUDA_SEPARABLE_COMPILATION ON)
 set(VISIONWORKS_DIR 1)
 set(OpenCV_VERSION 4.1.0)
 
 message(STATUS "cxx flags: " ${CMAKE_CXX_FLAGS})
 message(STATUS "c flags: " ${CMAKE_C_FLAGS})
-message(STATUS "cuda flags: " ${CUDA_NVCC_FLAGS})
+message(STATUS "cuda flags: " ${CMAKE_CUDA_FLAGS})
 message(STATUS "OpenCV version: " ${OpenCV_VERSION})
 
 find_package(VisionWorks REQUIRED)
@@ -77,19 +76,18 @@ find_package(OpenCV ${OpenCV_VERSION} REQUIRED)
 find_package(CUDA REQUIRED 10.2)
 
 enable_language(CUDA)
+
 set(CUDA_SEPARABLE_COMPILATION ON)
 
 file(GLOB SOURCES "*.cpp" ".c")
 file(GLOB HEADERS "*.h" "*.hpp")
 
-add_subdirectory(orb_slam2_vx_util)
 add_subdirectory(user_extensions)
 add_subdirectory(opencv_util)
 
 cuda_include_directories(
     ${VisionWorks_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS}
-    orb_slam2_vx_util
     user_extensions
     opencv_util
 )
@@ -104,5 +102,4 @@ target_link_libraries(${PROJECT_NAME}
     ${VisionWorks_LIBRARIES}
     opencv_util
     user_extensions
-    orb_slam2_vx_util
 )

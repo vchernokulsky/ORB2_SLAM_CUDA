@@ -29,6 +29,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 file(GLOB CPP_SOURCES "*/*/*.cpp" "*/*.cpp" "*.cpp")
 file(GLOB CUDA_SOURCES "*/*/*.cu" "*/*.cu" "*.cu" ${CPP_SOURCES})
+file(GLOB HEADERS "*/*/*.h" "*/*.h" "*.h" "*/*/*.cuh" "*/*.cuh" "*.cuh")
 
 cuda_include_directories(
     ${project_dir}
@@ -37,7 +38,7 @@ cuda_include_directories(
     /usr/local/cuda-10.2/include
 )
 
-cuda_add_library(${PROJECT_NAME} ${CPP_SOURCES}
+cuda_add_library(${PROJECT_NAME} ${CUDA_SOURCES}
 )
 target_link_libraries(${PROJECT_NAME}
     opencv_core
