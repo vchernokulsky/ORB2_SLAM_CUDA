@@ -94,7 +94,6 @@ vx_status registerIC_Angles_kernel(vx_context context) {
                                        IC_Angles_validator,
                                        NULL,
                                        NULL);
-    printf("GPU");
     #else
     vx_kernel kernel = vxAddUserKernel(context,
                                        "user.kernel.IC_Angle",
@@ -104,7 +103,6 @@ vx_status registerIC_Angles_kernel(vx_context context) {
                                        IC_Angles_validator,
                                        NULL,
                                        NULL);
-    printf("CPU");
     #endif
     ERROR_CHECK_OBJECT(kernel);
 
