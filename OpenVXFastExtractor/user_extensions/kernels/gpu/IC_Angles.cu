@@ -1,6 +1,15 @@
 #include "../IC_Angles.h"
 #include "IC_Angles.cuh"
 
+<<<<<<< HEAD
+=======
+__constant__ int c_u_max[32];
+
+void loadUMax(const int *u_max, int count) {
+    checkCudaErrors((cudaMemcpyToSymbol(c_u_max, u_max, count * sizeof(int))));
+}
+
+>>>>>>> 15a7970214f576b99919b99a85b09e782c2c4f27
 static  __global__ void
 IC_Angle_kernel(const cv::cuda::PtrStepb image, vx_keypoint_t *kp_buf, vx_size kp_size, vx_size kp_stride,
                 vx_int32 *u_max_buf,
@@ -21,10 +30,12 @@ IC_Angle_kernel(const cv::cuda::PtrStepb image, vx_keypoint_t *kp_buf, vx_size k
         const short2 loc = make_short2(vxArrayItem(vx_keypoint_t, kp_buf, ptidx, kp_stride).x,
                                        vxArrayItem(vx_keypoint_t, kp_buf, ptidx, kp_stride).y);
 
+
         for (u = threadIdx.x - u_max_size; u <= u_max_size; u += blockDim.x)
             m_10 += u * image(loc.y, loc.x + u);
 
         cv::cuda::device::reduce<32>(srow0, m_10, threadIdx.x, op);
+
 
         int v_sum;
         int m_sum;
