@@ -25,22 +25,24 @@
 get_filename_component(project_dir ${CMAKE_CURRENT_LIST_DIR} NAME)
 project(${project_dir})
 
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(VisionWorks REQUIRED)
-find_package(OpenCV ${OpenCV_VERSION} REQUIRED)
+file(GLOB CPP_SOURCES "*/*/*.cpp" "*/*.cpp" "*.cpp")
+file(GLOB CUDA_SOURCES "*/*/*.cu" "*/*.cu" "*.cu" ${CPP_SOURCES})
+file(GLOB HEADERS "*/*/*.h" "*/*.h" "*.h" "*/*/*.cuh" "*/*.cuh" "*.cuh")
 
-file(GLOB SOURCES "*/*/*.cpp" "*/*/*.c" "*/*.cpp" "*/*.c" "*.cpp" "*.c")
-file(GLOB HEADERS "*/*/*.h" "*/*/*.hpp" "*/*.h" "*/*.hpp" "*.h" "*.hpp")
-
-include_directories(
-        ${VisionWorks_INCLUDE_DIRS}
-        ${OpenCV_INCLUDE_DIRS}
-        ${project_dir}
+cuda_include_directories(
+    ${project_dir}
+    ${VisionWorks_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+    /usr/local/cuda-10.2/include
 )
 
-add_library(${PROJECT_NAME} ${SOURCES})
+cuda_add_library(${PROJECT_NAME} ${CUDA_SOURCES}
+)
 target_link_libraries(${PROJECT_NAME}
-        opencv_core
-        ${VisionWorks_LIBRARIES}
-        )
+    opencv_core
+    ${VisionWorks_LIBRARIES}
+    nvToolsExt
+)
 

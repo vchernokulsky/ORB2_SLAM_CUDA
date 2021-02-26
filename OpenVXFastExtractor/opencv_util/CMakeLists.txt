@@ -22,22 +22,19 @@
 get_filename_component(project_dir ${CMAKE_CURRENT_LIST_DIR} NAME)
 project(${project_dir})
 
-
-find_package(VisionWorks REQUIRED)
-find_package(OpenCV ${OpenCV_VERSION} REQUIRED)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 file(GLOB SOURCES "*.cpp" "*.c")
 file(GLOB HEADERS "*.h" "*.hpp")
 
-include_directories(
-        ${VisionWorks_INCLUDE_DIRS}
-        ${OpenCV_INCLUDE_DIRS}
-        ${project_dir}
-        ../user_extensions
+cuda_include_directories(
+    ${VisionWorks_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+    ${project_dir}
 )
 
-add_library(${PROJECT_NAME} ${SOURCES})
+cuda_add_library(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME}
-        opencv_core
-        ${VisionWorks_LIBRARIES}
-        )
+    opencv_core
+    ${VisionWorks_LIBRARIES}
+)

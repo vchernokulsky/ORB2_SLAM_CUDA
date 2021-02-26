@@ -2,9 +2,14 @@
 // Created by denis on 16.02.2021.
 //
 
-#include "user_extensions.hpp"
+#include "user_extensions.h"
+
 #include "NVX/nvx.h"
-static vx_status VX_CALLBACK IC_Angles_function(vx_node node, const vx_reference * refs, vx_uint32 num);
+#include <cuda_runtime.h>
+#include "opencv2/cudafeatures2d.hpp"
+
+static vx_status VX_CALLBACK IC_Angles_cpu_function(vx_node node, const vx_reference * refs, vx_uint32 num);
+static vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference * refs, vx_uint32 num);
 
 enum {
     USER_LIBRARY = 0x1,
@@ -80,14 +85,25 @@ IC_Angles_validator(vx_node node, vx_reference const *parameters, vx_uint32 num,
 }
 
 vx_status registerIC_Angles_kernel(vx_context context) {
+    #ifdef IC_ANGLES_GPU
     vx_kernel kernel = vxAddUserKernel(context,
-                                       "user.kernel.IC_Angle",
+                                       "gpu:user.kernel.IC_Angle",
                                        USER_KERNEL_IC_ANGLE,
-                                       IC_Angles_function,
+                                       IC_Angles_gpu_function,
                                        4,
                                        IC_Angles_validator,
                                        NULL,
                                        NULL);
+    #else
+    vx_kernel kernel = vxAddUserKernel(context,
+                                       "user.kernel.IC_Angle",
+                                       USER_KERNEL_IC_ANGLE,
+                                       IC_Angles_cpu_function,
+                                       4,
+                                       IC_Angles_validator,
+                                       NULL,
+                                       NULL);
+    #endif
     ERROR_CHECK_OBJECT(kernel);
 
     ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel, 0, VX_INPUT, VX_TYPE_IMAGE, VX_PARAMETER_STATE_REQUIRED));
@@ -99,58 +115,129 @@ vx_status registerIC_Angles_kernel(vx_context context) {
     return VX_SUCCESS;
 }
 
-vx_status VX_CALLBACK IC_Angles_function(vx_node node, const vx_reference *refs, vx_uint32 num) {
+vx_status VX_CALLBACK IC_Angles_cpu_function(vx_node node, const vx_reference *refs, vx_uint32 num) {
     vx_image vxImage = (vx_image) refs[0];
     vx_array vxInputKeyPoints = (vx_array) refs[1];
     vx_array uMaxArray = (vx_array) refs[2];
     vx_array vxOutputKeyPoints = (vx_array) refs[3];
 
-    vx_uint32 vxImageWidth = 0, vxImageHeight = 0;
-    ERROR_CHECK_STATUS(vxQueryImage(vxImage, VX_IMAGE_WIDTH, &vxImageWidth, sizeof(vxImageWidth)));
-    ERROR_CHECK_STATUS(vxQueryImage(vxImage, VX_IMAGE_HEIGHT, &vxImageHeight, sizeof(vxImageHeight)));
+    vx_size input_kp_size = 0;
+    vxQueryArray(vxInputKeyPoints, VX_ARRAY_NUMITEMS, &input_kp_size, sizeof(input_kp_size));
 
-    vx_rectangle_t image_rect = {0, 0, vxImageWidth, vxImageHeight};
-    vx_map_id image_map_id;
-    vx_imagepatch_addressing_t image_addr;
-    void *image_data_ptr;
-    ERROR_CHECK_STATUS(
-            vxMapImagePatch(vxImage, &image_rect, 0, &image_map_id, &image_addr, &image_data_ptr, VX_READ_ONLY,
-                            VX_MEMORY_TYPE_HOST, VX_NOGAP_X));
+    if (input_kp_size > 1) {
+        vx_uint32 vxImageWidth = 0, vxImageHeight = 0;
+        ERROR_CHECK_STATUS(vxQueryImage(vxImage, VX_IMAGE_WIDTH, &vxImageWidth, sizeof(vxImageWidth)));
+        ERROR_CHECK_STATUS(vxQueryImage(vxImage, VX_IMAGE_HEIGHT, &vxImageHeight, sizeof(vxImageHeight)));
 
-    const cv::Mat cvImage(vxImageHeight, vxImageWidth, CV_8U, image_data_ptr, image_addr.stride_y);
+        vx_rectangle_t image_rect = {0, 0, vxImageWidth, vxImageHeight};
+        vx_map_id image_map_id;
+        vx_imagepatch_addressing_t image_addr;
+        void *image_data_ptr;
+        ERROR_CHECK_STATUS(
+                vxMapImagePatch(vxImage, &image_rect, 0, &image_map_id, &image_addr, &image_data_ptr, VX_READ_ONLY,
+                                VX_MEMORY_TYPE_HOST, VX_NOGAP_X));
+
+        const cv::Mat cvImage(vxImageHeight, vxImageWidth, CV_8U, image_data_ptr, image_addr.stride_y);
+
+        vx_size u_max_size = 0;
+        vxQueryArray(uMaxArray, VX_ARRAY_NUMITEMS, &u_max_size, sizeof(u_max_size));
+        vx_size u_max_stride;
+        vx_map_id u_max_map_id;
+        vx_int32 *u_max_buf;
+        ERROR_CHECK_STATUS(vxMapArrayRange(uMaxArray, 0, u_max_size, &u_max_map_id, &u_max_stride, (void **) &u_max_buf,
+                                           VX_READ_ONLY, VX_MEMORY_TYPE_HOST, 0));
+
+        vx_size input_kp_stride;
+        vx_map_id input_kp_map_id;
+        vx_keypoint_t *input_kp_buf;
+        ERROR_CHECK_STATUS(
+                vxMapArrayRange(vxInputKeyPoints, 0, input_kp_size, &input_kp_map_id, &input_kp_stride, (void **) &input_kp_buf, VX_READ_ONLY,
+                                VX_MEMORY_TYPE_HOST, 0));
+
+        vxAddArrayItems(vxOutputKeyPoints, input_kp_size, input_kp_buf, input_kp_stride);
+
+        vx_size output_kp_stride;
+        vx_map_id output_kp_map_id;
+        vx_keypoint_t *output_kp_buf;
+        ERROR_CHECK_STATUS(
+                vxMapArrayRange(vxOutputKeyPoints, 0, input_kp_size, &output_kp_map_id, &output_kp_stride, (void **) &output_kp_buf, VX_READ_AND_WRITE,
+                                VX_MEMORY_TYPE_HOST, 0));
+
+        IC_Angles(cvImage, output_kp_buf, input_kp_size, output_kp_stride, u_max_buf, u_max_size, u_max_stride);
+
+        ERROR_CHECK_STATUS(vxUnmapImagePatch(vxImage, image_map_id));
+        ERROR_CHECK_STATUS(vxUnmapArrayRange(vxInputKeyPoints, input_kp_map_id));
+        ERROR_CHECK_STATUS(vxUnmapArrayRange(uMaxArray, u_max_map_id));
+        ERROR_CHECK_STATUS(vxUnmapArrayRange(vxOutputKeyPoints, output_kp_map_id));
+    }
+
+    return VX_SUCCESS;
+}
+
+vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference *refs, vx_uint32 num) {
+    vx_image vxImage = (vx_image) refs[0];
+    vx_array vxInputKeyPoints = (vx_array) refs[1];
+    vx_array uMaxArray = (vx_array) refs[2];
+    vx_array vxOutputKeyPoints = (vx_array) refs[3];
 
     vx_size input_kp_size = 0;
     vxQueryArray(vxInputKeyPoints, VX_ARRAY_NUMITEMS, &input_kp_size, sizeof(input_kp_size));
-    vx_size input_kp_stride;
-    vx_map_id input_kp_map_id;
-    vx_keypoint_t *input_kp_buf;
-    ERROR_CHECK_STATUS(
-            vxMapArrayRange(vxInputKeyPoints, 0, input_kp_size, &input_kp_map_id, &input_kp_stride, (void **) &input_kp_buf, VX_READ_ONLY,
-                            VX_MEMORY_TYPE_HOST, 0));
 
-    vx_size u_max_size = 0;
-    vxQueryArray(uMaxArray, VX_ARRAY_NUMITEMS, &u_max_size, sizeof(u_max_size));
-    vx_size u_max_stride;
-    vx_map_id u_max_map_id;
-    vx_int32 *u_max_buf;
-    ERROR_CHECK_STATUS(vxMapArrayRange(uMaxArray, 0, u_max_size, &u_max_map_id, &u_max_stride, (void **) &u_max_buf,
-                                       VX_READ_ONLY, VX_MEMORY_TYPE_HOST, 0));
+    if (input_kp_size > 0) {
+        cudaStream_t stream = NULL;
+        vxQueryNode(node, NVX_NODE_CUDA_STREAM, &stream, sizeof(stream));
 
-    vxAddArrayItems(vxOutputKeyPoints, input_kp_size, input_kp_buf, input_kp_stride);
+        vx_uint32 vxImageWidth = 0, vxImageHeight = 0;
+        ERROR_CHECK_STATUS(vxQueryImage(vxImage, VX_IMAGE_WIDTH, &vxImageWidth, sizeof(vxImageWidth)));
+        ERROR_CHECK_STATUS(vxQueryImage(vxImage, VX_IMAGE_HEIGHT, &vxImageHeight, sizeof(vxImageHeight)));
 
-    vx_size output_kp_stride;
-    vx_map_id output_kp_map_id;
-    vx_keypoint_t *output_kp_buf;
-    ERROR_CHECK_STATUS(
-            vxMapArrayRange(vxOutputKeyPoints, 0, input_kp_size, &output_kp_map_id, &output_kp_stride, (void **) &output_kp_buf, VX_READ_AND_WRITE,
-                            VX_MEMORY_TYPE_HOST, 0));
+        vx_rectangle_t image_rect = {0, 0, vxImageWidth, vxImageHeight};
+        vx_map_id image_map_id;
+        vx_imagepatch_addressing_t image_addr;
+        void *image_data_ptr;
+        ERROR_CHECK_STATUS(
+                vxMapImagePatch(vxImage, &image_rect, 0, &image_map_id, &image_addr, &image_data_ptr, VX_READ_ONLY,
+                                NVX_MEMORY_TYPE_CUDA, VX_NOGAP_X));
 
-    IC_Angles(cvImage, output_kp_buf, input_kp_size, output_kp_stride, u_max_buf, u_max_size, u_max_stride);
+        const cv::cuda::GpuMat cvImage(vxImageHeight, vxImageWidth, CV_8U, image_data_ptr, image_addr.stride_y);
 
-    ERROR_CHECK_STATUS(vxUnmapImagePatch(vxImage, image_map_id));
-    ERROR_CHECK_STATUS(vxUnmapArrayRange(vxInputKeyPoints, input_kp_map_id));
-    ERROR_CHECK_STATUS(vxUnmapArrayRange(uMaxArray, u_max_map_id));
-    ERROR_CHECK_STATUS(vxUnmapArrayRange(vxOutputKeyPoints, output_kp_map_id));
+        vx_size input_kp_stride;
+        vx_map_id input_kp_map_id;
+        vx_keypoint_t *input_kp_buf;
+        ERROR_CHECK_STATUS(
+                vxMapArrayRange(vxInputKeyPoints, 0, input_kp_size, &input_kp_map_id, &input_kp_stride, (void **) &input_kp_buf, VX_READ_ONLY,
+                                NVX_MEMORY_TYPE_CUDA, 0));
+
+        vx_size u_max_size = 0;
+        vxQueryArray(uMaxArray, VX_ARRAY_NUMITEMS, &u_max_size, sizeof(u_max_size));
+        vx_size u_max_stride;
+        vx_map_id u_max_map_id;
+        vx_int32 *u_max_buf;
+        ERROR_CHECK_STATUS(vxMapArrayRange(uMaxArray, 0, u_max_size, &u_max_map_id, &u_max_stride, (void **) &u_max_buf,
+                                           VX_READ_ONLY, NVX_MEMORY_TYPE_CUDA, 0));
+
+        vx_keypoint_t k;
+        vxAddArrayItems(vxOutputKeyPoints, 1, &k, sizeof(vx_keypoint_t));
+
+        vx_size output_kp_size = 0;
+        vxQueryArray(vxOutputKeyPoints, VX_ARRAY_NUMITEMS, &output_kp_size, sizeof(output_kp_size));
+        vx_size output_kp_stride;
+        vx_map_id output_kp_map_id;
+        vx_keypoint_t *output_kp_buf;
+        ERROR_CHECK_STATUS(
+                vxMapArrayRange(vxOutputKeyPoints, 0, output_kp_size, &output_kp_map_id, &output_kp_stride, (void **) &output_kp_buf, VX_WRITE_ONLY,
+                                NVX_MEMORY_TYPE_CUDA, 0));
+
+        vxCopyArrayRange(vxInputKeyPoints, 0, input_kp_size, input_kp_stride, output_kp_buf, VX_READ_ONLY, NVX_MEMORY_TYPE_CUDA);
+
+        IC_Angles_gpu(cvImage, output_kp_buf, input_kp_size, output_kp_stride,u_max_buf, u_max_size, u_max_stride,  stream);
+
+        ERROR_CHECK_STATUS(vxUnmapImagePatch(vxImage, image_map_id));
+        ERROR_CHECK_STATUS(vxUnmapArrayRange(vxInputKeyPoints, input_kp_map_id));
+        ERROR_CHECK_STATUS(vxUnmapArrayRange(uMaxArray, u_max_map_id));
+        ERROR_CHECK_STATUS(vxUnmapArrayRange(vxOutputKeyPoints, output_kp_map_id));
+    }
+
 
     return VX_SUCCESS;
 }

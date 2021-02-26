@@ -40,70 +40,67 @@
 cmake_minimum_required(VERSION 3.17)
 project(OpenVXFastExtractor)
 
-message("processor: " ${CMAKE_SYSTEM_PROCESSOR} )
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -fuse-ld=gold")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11 -O3 -fuse-ld=gold")
-    if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m64")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -m64")
-    elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=armv8-a+fp+simd+crc -mcpu=cortex-a57+crc")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfloat-abi=hard -march=armv8-a+fp+simd+crc -mcpu=cortex-a57+crc")
-    endif()
-endif()
+message(STATUS "architecture: " ${CMAKE_SYSTEM_PROCESSOR} )
 
-message(STATUS "cxx flags:" ${CMAKE_CXX_FLAGS})
-message(STATUS "c flags:" ${CMAKE_C_FLAGS})
+add_definitions (-DIC_ANGLES_GPU)
 
 set(CMAKE_CUDA_COMPILER "/usr/local/cuda-10.0/bin/nvcc")
 set(CMAKE_CUDA_HOST_COMPILER "g++")
-set(CMAKE_CUDA_FLAGS "-Xcompiler -O3 -cudart shared -arch=sm_53 -use_fast_math --fmad true -Xptxas -v -O3")
-set(VISIONWORKS_DIR 1)
+string( APPEND CMAKE_CUDA_FLAGS "-Xcompiler -O3 -cudart static -gencode arch=compute_53,code=sm_53 --use_fast_math --std=c++11 -Xptxas -O3")
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    string(APPEND CMAKE_CXX_FLAGS "-std=c++11 -O3 -fuse-ld=gold")
+    string(APPEND CMAKE_C_FLAGS "-std=c11 -O3 -fuse-ld=gold")
+    if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        string(APPEND CMAKE_CXX_FLAGS " -m64")
+        string(APPEND CMAKE_C_FLAGS " -m64")
+    elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        string(APPEND CMAKE_CXX_FLAGS " -march=armv8-a+fp+simd+crc -mcpu=cortex-a57+crc -ffast-math -funroll-loops -fvect-cost-model=unlimited -ftree-loop-vectorize")
+        string(APPEND CMAKE_C_FLAGS " -mfloat-abi=hard -march=armv8-a+fp+simd+crc -mcpu=cortex-a57+crc -ffast-math -funroll-loops -fvect-cost-model=unlimited -ftree-loop-vectorize")
+        set(CMAKE_CUDA_FLAGS "-Xcompiler -march=armv8-a+fp+simd+crc -O3 -cudart static -gencode arch=compute_53,code=sm_53 --use_fast_math --std=c++11 -Xptxas -O3 --use_fast_math")
+    endif()
+endif()
+
+set(CUDA_SEPARABLE_COMPILATION ON)
+set(VISIONWORKS_DIR 1)
 set(OpenCV_VERSION 4.1.0)
+
+message(STATUS "cxx flags: " ${CMAKE_CXX_FLAGS})
+message(STATUS "c flags: " ${CMAKE_C_FLAGS})
+message(STATUS "cuda flags: " ${CMAKE_CUDA_FLAGS})
+message(STATUS "OpenCV version: " ${OpenCV_VERSION})
+
+find_package(VisionWorks REQUIRED)
+find_package(OpenCV ${OpenCV_VERSION} REQUIRED)
+find_package(CUDA REQUIRED 10.0)
+
 enable_language(CUDA)
 
-message(STATUS "OpenCV:" ${OpenCV_VERSION})
-message(STATUS "cuda flags:" ${CMAKE_CUDA_FLAGS})
+set(CUDA_SEPARABLE_COMPILATION ON)
 
-find_package(OpenCV ${OpenCV_VERSION} REQUIRED)
-find_package(VisionWorks REQUIRED)
-
-file(GLOB SOURCES "*.cpp" "*.cu")
+file(GLOB SOURCES "*.cpp" ".c")
 file(GLOB HEADERS "*.h" "*.hpp")
 
-include_directories(
-        ${VisionWorks_INCLUDE_DIRS}
-        ${OpenCV_INCLUDE_DIRS}
-)
-
-
-add_subdirectory(opencv_util)
 add_subdirectory(user_extensions)
-add_subdirectory(orb_slam2_vx_util)
+add_subdirectory(opencv_util)
 
-include_directories(
-        ${VisionWorks_INCLUDE_DIRS}
-        ${OpenCV_INCLUDE_DIRS}
-        orb_slam2_vx_util
-        opencv_util
-        user_extensions
+cuda_include_directories(
+    ${VisionWorks_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
+    user_extensions
+    opencv_util
 )
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+cuda_add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME}
-        opencv_videoio
-        opencv_core
-        opencv_imgproc
-        opencv_imgcodecs
-        opencv_highgui
-        cuda
-        cudart
-        pthread
-        ${VisionWorks_LIBRARIES}
-        opencv_util
-        user_extensions
-        orb_slam2_vx_util
-        )
+    opencv_videoio
+    opencv_core
+    opencv_imgproc
+    opencv_imgcodecs
+    opencv_highgui
+    ${VisionWorks_LIBRARIES}
+    opencv_util
+    user_extensions
+)
