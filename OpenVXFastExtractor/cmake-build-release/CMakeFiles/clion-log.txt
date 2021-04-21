@@ -1,0 +1,11 @@
+/home/denis/clion-2020.2.4/bin/cmake/linux/bin/cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_BUILD_TYPE=Release -G Ninja /home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor
+-- architecture: x86_64
+-- cxx flags: -std=c++11 -O3 -fuse-ld=gold -m64
+-- c flags: -std=c11 -O3 -fuse-ld=gold -m64
+-- cuda flags: -Xcompiler -O3 -cudart static -gencode arch=compute_53,code=sm_53 --use_fast_math --std=c++11 -Xptxas -O3
+-- OpenCV version: 4.1.0
+-- Found CUDA: /usr/local/cuda (found suitable exact version "10.2") 
+-- Found CUDA: /usr/local/cuda (found version "10.2") 
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-release

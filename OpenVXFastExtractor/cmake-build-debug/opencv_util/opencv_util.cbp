@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6"/>
+	<Project>
+		<Option title="opencv_util"/>
+		<Option makefile_is_custom="1"/>
+		<Option compiler="gcc"/>
+		<Option virtualFolders="CMake Files\;CMake Files\..\;CMake Files\..\..\;CMake Files\..\..\..\;CMake Files\..\..\..\..\;CMake Files\..\..\..\..\usr\;CMake Files\..\..\..\..\usr\share\;CMake Files\..\..\..\..\usr\share\visionworks\;CMake Files\..\..\..\..\usr\share\visionworks\cmake\;CMake Files\..\..\..\..\usr\local\;CMake Files\..\..\..\..\usr\local\lib\;CMake Files\..\..\..\..\usr\local\lib\cmake\;CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\;CMake Files\user_extensions\;CMake Files\opencv_util\;"/>
+		<Build>
+			<Target title="all">
+				<Option working_dir="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util"/>
+				<Option type="4"/>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 all"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="opencv_util">
+				<Option output="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/libopencv_util.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DIC_ANGLES_GPU"/>
+					<Add directory="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util"/>
+					<Add directory="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/opencv_util"/>
+					<Add directory="/usr/local/cuda/include"/>
+					<Add directory="/usr/local/include/opencv4"/>
+					<Add directory="/usr/include/c++/7"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/7"/>
+					<Add directory="/usr/include/c++/7/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 opencv_util"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+			<Target title="opencv_util/fast">
+				<Option output="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/libopencv_util.a" prefix_auto="0" extension_auto="0"/>
+				<Option working_dir="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util"/>
+				<Option object_output="./"/>
+				<Option type="2"/>
+				<Option compiler="gcc"/>
+				<Compiler>
+					<Add option="-DIC_ANGLES_GPU"/>
+					<Add directory="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util"/>
+					<Add directory="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/opencv_util"/>
+					<Add directory="/usr/local/cuda/include"/>
+					<Add directory="/usr/local/include/opencv4"/>
+					<Add directory="/usr/include/c++/7"/>
+					<Add directory="/usr/include/x86_64-linux-gnu/c++/7"/>
+					<Add directory="/usr/include/c++/7/backward"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include"/>
+					<Add directory="/usr/local/include"/>
+					<Add directory="/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed"/>
+					<Add directory="/usr/include/x86_64-linux-gnu"/>
+					<Add directory="/usr/include"/>
+				</Compiler>
+				<MakeCommands>
+					<Build command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 opencv_util/fast"/>
+					<CompileFile command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 &quot;$file&quot;"/>
+					<Clean command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 clean"/>
+					<DistClean command="/usr/bin/make -j4 -f &quot;/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-debug/opencv_util/Makefile&quot;  VERBOSE=1 clean"/>
+				</MakeCommands>
+			</Target>
+		</Build>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/opencv_util/opencv_interop.cpp">
+			<Option target="opencv_util"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/opencv_util/opencv_interop.h">
+			<Option target="opencv_util"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/../../../../usr/share/visionworks/cmake/VisionWorksConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\share\visionworks\cmake\"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/../../../../usr/share/visionworks/cmake/VisionWorksConfigVersion.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\share\visionworks\cmake\"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/../../../../usr/share/visionworks/cmake/VisionWorksTargets-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\share\visionworks\cmake\"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/../../../../usr/share/visionworks/cmake/VisionWorksTargets.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\share\visionworks\cmake\"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/../../../../usr/local/lib/cmake/opencv4/OpenCVConfig-version.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/../../../../usr/local/lib/cmake/opencv4/OpenCVConfig.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/../../../../usr/local/lib/cmake/opencv4/OpenCVModules-release.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/../../../../usr/local/lib/cmake/opencv4/OpenCVModules.cmake">
+			<Option virtualFolder="CMake Files\..\..\..\..\usr\local\lib\cmake\opencv4\"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/user_extensions/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\user_extensions\"/>
+		</Unit>
+		<Unit filename="/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/opencv_util/CMakeLists.txt">
+			<Option virtualFolder="CMake Files\opencv_util\"/>
+		</Unit>
+	</Project>
+</CodeBlocks_project_file>

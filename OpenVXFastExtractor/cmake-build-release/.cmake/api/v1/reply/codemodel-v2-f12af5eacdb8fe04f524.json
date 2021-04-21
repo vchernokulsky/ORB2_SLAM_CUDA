@@ -1,0 +1,135 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"childIndexes" : 
+					[
+						1,
+						2
+					],
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.17"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"build" : "user_extensions",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.17"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 1,
+					"source" : "user_extensions",
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"build" : "opencv_util",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.17"
+					},
+					"parentIndex" : 0,
+					"projectIndex" : 2,
+					"source" : "opencv_util",
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"name" : "Release",
+			"projects" : 
+			[
+				{
+					"childIndexes" : 
+					[
+						1,
+						2
+					],
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "OpenVXFastExtractor",
+					"targetIndexes" : 
+					[
+						0
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						1
+					],
+					"name" : "user_extensions",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						2
+					]
+				},
+				{
+					"directoryIndexes" : 
+					[
+						2
+					],
+					"name" : "opencv_util",
+					"parentIndex" : 0,
+					"targetIndexes" : 
+					[
+						1
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "OpenVXFastExtractor::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-OpenVXFastExtractor-Release-cb0dfe1de2456597c766.json",
+					"name" : "OpenVXFastExtractor",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 2,
+					"id" : "opencv_util::@0ec3d3ba372ffd080b7e",
+					"jsonFile" : "target-opencv_util-Release-c751f4b4e470a7855b54.json",
+					"name" : "opencv_util",
+					"projectIndex" : 2
+				},
+				{
+					"directoryIndex" : 1,
+					"id" : "user_extensions::@2b0fe94cbdcda1c982ac",
+					"jsonFile" : "target-user_extensions-Release-c47e19527afdab5bcf4a.json",
+					"name" : "user_extensions",
+					"projectIndex" : 1
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor/cmake-build-release",
+		"source" : "/home/denis/ORB2_SLAM_CUDA/OpenVXFastExtractor"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 0
+	}
+}
