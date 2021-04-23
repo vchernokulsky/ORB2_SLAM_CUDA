@@ -24,7 +24,10 @@
 #include <vector>
 #include <list>
 #include <opencv/cv.h>
+#include <VX/vx.h>
 
+using namespace cv;
+using namespace std;
 
 namespace ORB_SLAM2
 {
@@ -83,15 +86,13 @@ public:
     }
 
     std::vector<cv::Mat> mvImagePyramid;
+    void init();
+    void ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoints);
 
 protected:
-
-    void ComputePyramid(cv::Mat image);
-    void ComputeKeyPointsOctTree(std::vector<std::vector<cv::KeyPoint> >& allKeypoints);    
     std::vector<cv::KeyPoint> DistributeOctTree(const std::vector<cv::KeyPoint>& vToDistributeKeys, const int &minX,
                                            const int &maxX, const int &minY, const int &maxY, const int &nFeatures, const int &level);
 
-    void ComputeKeyPointsOld(std::vector<std::vector<cv::KeyPoint> >& allKeypoints);
     std::vector<cv::Point> pattern;
 
     int nfeatures;
@@ -102,12 +103,36 @@ protected:
 
     std::vector<int> mnFeaturesPerLevel;
 
-    std::vector<int> umax;
 
     std::vector<float> mvScaleFactor;
     std::vector<float> mvInvScaleFactor;    
     std::vector<float> mvLevelSigma2;
     std::vector<float> mvInvLevelSigma2;
+
+    cv::Mat cvInputImg;
+    std::vector<cv::Mat> cvOutputImages;
+
+    short cameraWidth;
+    short cameraHeight;
+
+    vx_graph graph;
+    vx_context context;
+
+    vx_image vxInputImg;
+    std::vector<vx_image> vxPyramidImages;
+    std::vector<vx_image> gaussian7x7Images;
+
+    vx_array u_max;
+    std::vector<vx_array> fastCorners;
+    std::vector<vx_array> IC_AnglesCorners;
+    std::vector<vx_scalar> strength_thresh;
+    std::vector<vx_scalar> num_corners;
+    vx_convolution gaussian7x7;
+
+    std::vector<vx_node> scaleNodes;
+    std::vector<vx_node> fastCornersNodes;
+    std::vector<vx_node> IC_AnglesNodes;
+    std::vector<vx_node> gaussian7x7Nodes;
 };
 
 } //namespace ORB_SLAM

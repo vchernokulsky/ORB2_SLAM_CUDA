@@ -7,7 +7,7 @@ set(CMAKE_CUDA_COMPILER "/usr/local/cuda-10.2/bin/nvcc")
 set(CMAKE_CUDA_HOST_COMPILER "g++")
 
 file(GLOB_RECURSE CPP_SOURCES *.cpp)
-file(GLOB CUDA_SOURCES "*.cu")
+file(GLOB_RECURSE CUDA_SOURCES "*.cu")
 
 find_package(CUDA REQUIRED 10.2)
 

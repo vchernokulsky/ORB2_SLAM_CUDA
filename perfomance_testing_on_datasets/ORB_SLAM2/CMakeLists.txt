@@ -20,12 +20,14 @@ include_directories(
 	${OpenCV_INCLUDE_DIRS}
 )
 
-add_library(${PROJECT_NAME} SHARED ${SOURCES})
+add_library(${PROJECT_NAME} STATIC ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME}
 	${OpenCV_LIBS}
 	${EIGEN3_LIBS}
 	${PROJECT_SOURCE_DIR}/../Thirdparty/DBoW2/lib/libDBoW2.so
 	${PROJECT_SOURCE_DIR}/../Thirdparty/g2o/lib/libg2o.so
+	user_extensions
+	opencv_util
 )
 
