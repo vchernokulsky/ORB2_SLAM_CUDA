@@ -246,10 +246,13 @@ void Frame::AssignFeaturesToGrid()
 
 void Frame::ExtractORB(int flag, const cv::Mat &im)
 {
+    auto s = std::chrono::system_clock::now();
+
     if(flag==0)
         (*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors);
     else
         (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight);
+    std::cout << "t: " << (((float)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - s).count()) / (float)1000) << std::endl;
 }
 
 void Frame::SetPose(cv::Mat Tcw)

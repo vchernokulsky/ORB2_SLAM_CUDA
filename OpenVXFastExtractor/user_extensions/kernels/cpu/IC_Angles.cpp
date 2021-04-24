@@ -26,12 +26,12 @@ IC_Angles(const cv::Mat &image, vx_keypoint_t *kp_buf, vx_size kp_size, vx_size 
         center = &image.at<uchar>(cvRound(kp.y), cvRound(kp.x));
 
         // Treat the center line differently, v=0
-        for (u = -u_max_size; u <= u_max_size; ++u)
+        for (u = -((int)u_max_size - 1); u <= u_max_size - 1; ++u)
             m_10 += u * center[u];
 
         // Go line by line in the circuI853lar patch
         step = (int) image.step1();
-        for (v = 1; v <= u_max_size; ++v) {
+        for (v = 1; v <= u_max_size - 1; ++v) {
             // Proceed over the two lines
             v_sum = 0;
             d = vxArrayItem(vx_int32, u_max_buf, v, u_max_stride);

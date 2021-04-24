@@ -39,8 +39,32 @@ static inline int localFloor( double value ) {
     int i = (int)value;
     return i - (i > value);
 }
-static inline int localRound( int value ) {
-    return value;
+static int
+localRound( double value )
+{
+#if ((defined _MSC_VER && defined _M_X64) || (defined __GNUC__ && defined __x86_64__ \
+    && defined __SSE2__ && !defined __APPLE__) || CV_SSE2) && !defined(__CUDACC__)
+    __m128d t = _mm_set_sd( value );
+    return _mm_cvtsd_si32(t);
+#elif defined _MSC_VER && defined _M_IX86
+    int t;
+    __asm
+    {
+        fld value;
+        fistp t;
+    }
+    return t;
+#elif defined CV_ICC || defined __GNUC__
+# if defined ARM_ROUND_DBL
+    ARM_ROUND_DBL(value);
+# else
+    return (int)lrint(value);
+# endif
+#else
+    /* it's ok if round does not comply with IEEE754 standard;
+       the tests should allow +/-1 difference when the tested functions use round */
+    return (int)(value + (value >= 0 ? 0.5 : -0.5));
+#endif
 }
 }
 

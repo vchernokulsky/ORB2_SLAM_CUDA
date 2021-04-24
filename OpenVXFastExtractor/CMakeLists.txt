@@ -37,31 +37,31 @@
 #    user_extensions
 #)
 
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.10)
 project(OpenVXFastExtractor)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 message(STATUS "architecture: " ${CMAKE_SYSTEM_PROCESSOR} )
 
-add_definitions (-DIC_ANGLES_GPU)
+#add_definitions (-DIC_ANGLES_GPU)
 
-set(CMAKE_CUDA_COMPILER "/usr/local/cuda-10.0/bin/nvcc")
+set(CMAKE_CUDA_COMPILER "/usr/local/cuda-10.2/bin/nvcc")
 set(CMAKE_CUDA_HOST_COMPILER "g++")
-string( APPEND CMAKE_CUDA_FLAGS "-Xcompiler -O3 -cudart static -gencode arch=compute_53,code=sm_53 --use_fast_math --std=c++11 -Xptxas -O3")
+string( APPEND CMAKE_CUDA_FLAGS "-Xcompiler -O3 -cudart static --use_fast_math --std=c++11 -Xptxas -O3")
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    string(APPEND CMAKE_CXX_FLAGS "-std=c++11 -O3 -fuse-ld=gold")
-    string(APPEND CMAKE_C_FLAGS "-std=c11 -O3 -fuse-ld=gold")
-    if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-        string(APPEND CMAKE_CXX_FLAGS " -m64")
-        string(APPEND CMAKE_C_FLAGS " -m64")
-    elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-        string(APPEND CMAKE_CXX_FLAGS " -march=armv8-a+fp+simd+crc -mcpu=cortex-a57+crc -ffast-math -funroll-loops -fvect-cost-model=unlimited -ftree-loop-vectorize")
-        string(APPEND CMAKE_C_FLAGS " -mfloat-abi=hard -march=armv8-a+fp+simd+crc -mcpu=cortex-a57+crc -ffast-math -funroll-loops -fvect-cost-model=unlimited -ftree-loop-vectorize")
-        set(CMAKE_CUDA_FLAGS "-Xcompiler -march=armv8-a+fp+simd+crc -O3 -cudart static -gencode arch=compute_53,code=sm_53 --use_fast_math --std=c++11 -Xptxas -O3 --use_fast_math")
-    endif()
-endif()
+# if(CMAKE_BUILD_TYPE STREQUAL "Release")
+#     string(APPEND CMAKE_CXX_FLAGS "-std=c++11 -O3 -fuse-ld=gold")
+#     string(APPEND CMAKE_C_FLAGS "-std=c11 -O3 -fuse-ld=gold")
+#     if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+#         string(APPEND CMAKE_CXX_FLAGS " -m64")
+#         string(APPEND CMAKE_C_FLAGS " -m64")
+#     elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+#         string(APPEND CMAKE_CXX_FLAGS " -march=armv8-a+fp+simd+crc -mcpu=cortex-a57+crc -ffast-math -funroll-loops -fvect-cost-model=unlimited -ftree-loop-vectorize")
+#         string(APPEND CMAKE_C_FLAGS " -mfloat-abi=hard -march=armv8-a+fp+simd+crc -mcpu=cortex-a57+crc -ffast-math -funroll-loops -fvect-cost-model=unlimited -ftree-loop-vectorize")
+#         set(CMAKE_CUDA_FLAGS "-Xcompiler -march=armv8-a+fp+simd+crc -O3 -cudart static -gencode arch=compute_53,code=sm_53 --use_fast_math --std=c++11 -Xptxas -O3 --use_fast_math")
+#     endif()
+# endif()
 
 set(CUDA_SEPARABLE_COMPILATION ON)
 set(VISIONWORKS_DIR 1)
@@ -74,7 +74,7 @@ message(STATUS "OpenCV version: " ${OpenCV_VERSION})
 
 find_package(VisionWorks REQUIRED)
 find_package(OpenCV ${OpenCV_VERSION} REQUIRED)
-find_package(CUDA REQUIRED 10.0)
+find_package(CUDA REQUIRED 10.2)
 
 enable_language(CUDA)
 

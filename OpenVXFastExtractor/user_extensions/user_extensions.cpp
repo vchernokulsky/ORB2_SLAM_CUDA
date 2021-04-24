@@ -6,6 +6,7 @@
 
 #include "NVX/nvx.h"
 #include <cuda_runtime.h>
+#include <iostream>
 #include "opencv2/cudafeatures2d.hpp"
 
 static vx_status VX_CALLBACK IC_Angles_cpu_function(vx_node node, const vx_reference * refs, vx_uint32 num);
@@ -121,6 +122,8 @@ vx_status VX_CALLBACK IC_Angles_cpu_function(vx_node node, const vx_reference *r
     vx_array uMaxArray = (vx_array) refs[2];
     vx_array vxOutputKeyPoints = (vx_array) refs[3];
 
+    vxTruncateArray(vxOutputKeyPoints, 0);
+
     vx_size input_kp_size = 0;
     vxQueryArray(vxInputKeyPoints, VX_ARRAY_NUMITEMS, &input_kp_size, sizeof(input_kp_size));
 
@@ -180,6 +183,8 @@ vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference *r
     vx_array uMaxArray = (vx_array) refs[2];
     vx_array vxOutputKeyPoints = (vx_array) refs[3];
 
+    vxTruncateArray(vxOutputKeyPoints, 0);
+
     vx_size input_kp_size = 0;
     vxQueryArray(vxInputKeyPoints, VX_ARRAY_NUMITEMS, &input_kp_size, sizeof(input_kp_size));
 
@@ -219,16 +224,20 @@ vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference *r
         vx_keypoint_t k;
         vxAddArrayItems(vxOutputKeyPoints, 1, &k, sizeof(vx_keypoint_t));
 
-        vx_size output_kp_size = 0;
-        vxQueryArray(vxOutputKeyPoints, VX_ARRAY_NUMITEMS, &output_kp_size, sizeof(output_kp_size));
+
         vx_size output_kp_stride;
         vx_map_id output_kp_map_id;
         vx_keypoint_t *output_kp_buf;
         ERROR_CHECK_STATUS(
-                vxMapArrayRange(vxOutputKeyPoints, 0, output_kp_size, &output_kp_map_id, &output_kp_stride, (void **) &output_kp_buf, VX_WRITE_ONLY,
+                vxMapArrayRange(vxOutputKeyPoints, 0, 1, &output_kp_map_id, &output_kp_stride, (void **) &output_kp_buf, VX_READ_AND_WRITE,
                                 NVX_MEMORY_TYPE_CUDA, 0));
 
-        vxCopyArrayRange(vxInputKeyPoints, 0, input_kp_size, input_kp_stride, output_kp_buf, VX_READ_ONLY, NVX_MEMORY_TYPE_CUDA);
+        ERROR_CHECK_STATUS(vxCopyArrayRange(vxOutputKeyPoints, 0, input_kp_size, input_kp_stride, input_kp_buf, VX_WRITE_ONLY, NVX_MEMORY_TYPE_CUDA));
+
+        vx_size output_kp_size = 0;
+        vxQueryArray(vxOutputKeyPoints, VX_ARRAY_NUMITEMS, &output_kp_size, sizeof(output_kp_size));
+        std::cout << "vxOutputKeyPoints: " << output_kp_size << std::endl;
+        std::cout << "vxInputKeyPoints: " << input_kp_size << std::endl;
 
         IC_Angles_gpu(cvImage, output_kp_buf, input_kp_size, output_kp_stride,u_max_buf, u_max_size, u_max_stride,  stream);
 

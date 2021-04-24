@@ -91,7 +91,7 @@ int main(void) {
         //                                     vx_true_e,
         //                                   fastCorners.at(i),
         //                                 num_corners.at(i));
-        nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 9, fast_strength_thresh, 6, num_corners.at(i));
+        fastCornersNodes.at(i) = nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 9, fast_strength_thresh, 6, num_corners.at(i));
     }
 
     vx_array u_max = createUMax(context, HALF_PATCH_SIZE);
@@ -183,6 +183,7 @@ int main(void) {
     long long int framesNum = 0;
     auto start = std::chrono::system_clock::now();
 
+    cv::Mat tmp;
     while (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - start).count() <= 60) {
         rect.start_x = 0;
         rect.start_y = 0;
@@ -192,7 +193,8 @@ int main(void) {
         vxMapImagePatch(vxInputImg, &rect, 0, &vxImageMapId, &vxImageAddr, &vxImagePtr, VX_READ_AND_WRITE, VX_MEMORY_TYPE_HOST, 0);
         camera >> cvPreInputImg;
         cv::resize(cvPreInputImg, cvPreInputImg, cv::Size(640,480), 0, 0, cv::INTER_LINEAR);
-        cv::cvtColor(cvPreInputImg, cvInputImg, cv::COLOR_BGR2GRAY);
+        cv::cvtColor(cvPreInputImg, tmp, cv::COLOR_BGR2GRAY);
+        tmp.copyTo(cvInputImg);
         vxUnmapImagePatch(vxInputImg, vxImageMapId);
         auto s = std::chrono::system_clock::now();
         vxProcessGraph(graph);
@@ -206,7 +208,7 @@ int main(void) {
 
             vxMapImagePatch(gaussian7x7Images.at(i), &rect, 0, &vxImageMapId, &vxImageAddr, &vxImagePtr, VX_READ_AND_WRITE, VX_MEMORY_TYPE_HOST, 0);
 
-            std::cout << "(" << (int)i << ") num_corners: " << corners_count << std::endl;
+            std::cout << "(" << (int)i << ") Fast corners: " << corners_count << std::endl;
             if (corners_count > 0) {
                 vx_size kp_stride;
                 vx_map_id kp_map;
@@ -220,6 +222,10 @@ int main(void) {
                 }
                 ERROR_CHECK_STATUS( vxUnmapArrayRange(fastCorners.at(i), kp_map ) );
             }
+
+            vx_size IC_AnglesCornersSize = 0;
+            vxQueryArray(IC_AnglesCorners.at(i), VX_ARRAY_NUMITEMS, &IC_AnglesCornersSize, sizeof( IC_AnglesCornersSize));
+            std::cout << "(" << (int)i << ") IC_Angles corners: " << IC_AnglesCornersSize << std::endl;
 
             cv::imshow("Webcam " + std::to_string(i), cvOutputImages.at(i));
 

@@ -378,7 +378,7 @@ ORBextractor::ORBextractor(int _nfeatures, float _scaleFactor, int _nlevels,
     iniThFAST(_iniThFAST), minThFAST(_minThFAST),
     cameraWidth(640),
     cameraHeight(480),
-    cvInputImg(cameraHeight, cameraWidth, CV_8UC1),
+    cvInputImg(480, 640, CV_8UC1),
     scaleNodes(_nlevels - 1),
     fastCorners(_nlevels),
     fastCornersNodes(_nlevels),
@@ -386,7 +386,9 @@ ORBextractor::ORBextractor(int _nfeatures, float _scaleFactor, int _nlevels,
     IC_AnglesNodes(_nlevels),
     gaussian7x7Images(_nlevels),
     gaussian7x7Nodes(_nlevels),
-    cvOutputImages(_nlevels)
+    cvOutputImages(_nlevels),
+    strength_thresh(_nlevels),
+    num_corners(_nlevels)
 {
     mvScaleFactor.resize(nlevels);
     mvLevelSigma2.resize(nlevels);
@@ -488,34 +490,34 @@ vector<cv::KeyPoint> ORBextractor::DistributeOctTree(const vector<cv::KeyPoint>&
                                        const int &maxX, const int &minY, const int &maxY, const int &N, const int &level)
 {
     // Compute how many initial nodes   
-//    const int nIni = round(static_cast<float>(maxX-minX)/(maxY-minY));
+    const int nIni = round(static_cast<float>(maxX-minX)/(maxY-minY));
 //
-//    const float hX = static_cast<float>(maxX-minX)/nIni;
+    const float hX = static_cast<float>(maxX-minX)/nIni;
 
     list<ExtractorNode> lNodes;
 
     vector<ExtractorNode*> vpIniNodes;
-//    vpIniNodes.resize(nIni);
-//
-//    for(int i=0; i<nIni; i++)
-//    {
-//        ExtractorNode ni;
-//        ni.UL = cv::Point2i(hX*static_cast<float>(i),0);
-//        ni.UR = cv::Point2i(hX*static_cast<float>(i+1),0);
-//        ni.BL = cv::Point2i(ni.UL.x,maxY-minY);
-//        ni.BR = cv::Point2i(ni.UR.x,maxY-minY);
-//        ni.vKeys.reserve(vToDistributeKeys.size());
-//
-//        lNodes.push_back(ni);
-//        vpIniNodes[i] = &lNodes.back();
-//    }
+    vpIniNodes.resize(nIni);
 
-    //Associate points to childs
-//    for(size_t i=0;i<vToDistributeKeys.size();i++)
-//    {
-//        const cv::KeyPoint &kp = vToDistributeKeys[i];
-//        vpIniNodes[kp.pt.x/hX]->vKeys.push_back(kp);
-//    }
+    for(int i=0; i<nIni; i++)
+    {
+        ExtractorNode ni;
+        ni.UL = cv::Point2i(hX*static_cast<float>(i),0);
+        ni.UR = cv::Point2i(hX*static_cast<float>(i+1),0);
+        ni.BL = cv::Point2i(ni.UL.x,maxY-minY);
+        ni.BR = cv::Point2i(ni.UR.x,maxY-minY);
+        ni.vKeys.reserve(vToDistributeKeys.size());
+
+        lNodes.push_back(ni);
+        vpIniNodes[i] = &lNodes.back();
+    }
+
+//    Associate points to childs
+    for(size_t i=0;i<vToDistributeKeys.size();i++)
+    {
+        const cv::KeyPoint &kp = vToDistributeKeys[i];
+        vpIniNodes[kp.pt.x/hX]->vKeys.push_back(kp);
+    }
 
     list<ExtractorNode>::iterator lit = lNodes.begin();
 
@@ -722,37 +724,42 @@ static void computeDescriptors(const Mat& image, vector<KeyPoint>& keypoints, Ma
 void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoints) {
     allKeypoints.resize(nlevels);
 
-
     for (int level = 0; level < nlevels; ++level) {
+        vector<cv::KeyPoint> vToDistributeKeys;
+        vToDistributeKeys.reserve(nfeatures*10);
+
         vx_size corners_count = 0;
         vxQueryArray(fastCorners.at(level), VX_ARRAY_NUMITEMS, &corners_count, sizeof( corners_count));
 
-        vector<cv::KeyPoint> vToDistributeKeys;
-        vToDistributeKeys.reserve(corners_count*10);
-
         if (corners_count > 0) {
-            vx_size kp_stride;
-            vx_map_id kp_map;
-            vx_uint8 * kp_buf;
+            vx_size kpStride;
+            vx_map_id fastKpMapId;
+            vx_uint8 * fastKpBuf;
 
-            ERROR_CHECK_STATUS( vxMapArrayRange(fastCorners.at(level), 0, corners_count, &kp_map, &kp_stride, ( void ** ) &kp_buf, VX_READ_ONLY, VX_MEMORY_TYPE_HOST, 0 ) );
+            ERROR_CHECK_STATUS( vxMapArrayRange(fastCorners.at(level), 0, corners_count, &fastKpMapId, &kpStride, ( void ** ) &fastKpBuf, VX_READ_ONLY, VX_MEMORY_TYPE_HOST, 0 ) );
+
+            vx_map_id IC_AnglesKpMapId;
+            vx_uint8 * IC_AnglesKpBuf;
+            ERROR_CHECK_STATUS( vxMapArrayRange(IC_AnglesCorners.at(level), 0, corners_count, &IC_AnglesKpMapId, &kpStride, ( void ** ) &IC_AnglesKpBuf, VX_READ_ONLY, VX_MEMORY_TYPE_HOST, 0 ) );
 
             for( vx_size j = 0; j < corners_count; j++ ) {
-                vx_keypoint_t kp = vxArrayItem(vx_keypoint_t, kp_buf, j, kp_stride);
-                if( kp.tracking_status ) {
-                    cv::KeyPoint cvKp;
-                    cvKp.pt.x = kp.x;
-                    cvKp.pt.y = kp.y;
-                    vToDistributeKeys.emplace_back(cvKp);
-                }
+                vx_keypoint_t kp = vxArrayItem(vx_keypoint_t, fastKpBuf, j, kpStride);
+                vx_keypoint_t kp1 = vxArrayItem(vx_keypoint_t, IC_AnglesKpBuf, j, kpStride);
+
+                cv::KeyPoint cvKp;
+                cvKp.pt.x = kp.x;
+                cvKp.pt.y = kp.y;
+                cvKp.angle = kp1.orientation;
+                vToDistributeKeys.emplace_back(cvKp);
             }
-            ERROR_CHECK_STATUS( vxUnmapArrayRange(fastCorners.at(level), kp_map ) );
+            ERROR_CHECK_STATUS( vxUnmapArrayRange(fastCorners.at(level), fastKpMapId ) );
+            ERROR_CHECK_STATUS( vxUnmapArrayRange(IC_AnglesCorners.at(level), IC_AnglesKpMapId ));
         }
 
         vector<KeyPoint> & keypoints = allKeypoints[level];
         keypoints.reserve(corners_count);
 
-        keypoints = DistributeOctTree(vToDistributeKeys, 0, 0,0, 0,mnFeaturesPerLevel[level], level);
+        keypoints = DistributeOctTree(vToDistributeKeys, 0, cameraWidth * mvInvScaleFactor.at(level),0, cameraHeight * mvInvScaleFactor.at(level),mnFeaturesPerLevel[level], level);
 
         const int scaledPatchSize = PATCH_SIZE*mvScaleFactor[level];
         const int nkps = keypoints.size();
@@ -760,25 +767,6 @@ void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoin
         {
             keypoints[i].octave=level;
             keypoints[i].size = scaledPatchSize;
-        }
-    }
-
-    for (int level = 0; level < nlevels; ++level) {
-        vx_size arr_sz = 0;
-        vxQueryArray(fastCorners.at(level), VX_ARRAY_NUMITEMS, &arr_sz, sizeof( arr_sz));
-
-        if (arr_sz > 0) {
-            vx_size stride;
-            vx_map_id mapId;
-            vx_uint8 * buf;
-            ERROR_CHECK_STATUS( vxMapArrayRange(IC_AnglesCorners.at(level), 0, arr_sz, &mapId, &stride, ( void ** ) &buf, VX_READ_ONLY, VX_MEMORY_TYPE_HOST, 0 ) );
-            for( vx_size j = 0; j < arr_sz; j++ ) {
-                vx_keypoint_t kp = vxArrayItem(vx_keypoint_t, buf, j, stride);
-                if( kp.tracking_status ) {
-                    allKeypoints[level].at(j).angle = kp.orientation;
-                }
-            }
-            ERROR_CHECK_STATUS( vxUnmapArrayRange(fastCorners.at(level), mapId ) );
         }
     }
 }
@@ -799,15 +787,15 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
     rect.end_y = cameraHeight;
 
     vxMapImagePatch(vxInputImg, &rect, 0, &vxImageMapId, &vxImageAddr, &vxImagePtr, VX_READ_AND_WRITE, VX_MEMORY_TYPE_HOST, 0);
-    cvInputImg = _image.getMat().clone();
+    _image.getMat().copyTo(cvInputImg);
     vxUnmapImagePatch(vxInputImg, vxImageMapId);
+
     vxProcessGraph(graph);
 
     vector < vector<KeyPoint> > allKeypoints;
 
     ComputeKeyPointsOctTree(allKeypoints);
 
-    // Что-то я должен здесь написать !!! О_о
     Mat descriptors;
 
     int nkeypoints = 0;
@@ -837,7 +825,6 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
         vxQueryImage(gaussian7x7Images.at(level), VX_IMAGE_HEIGHT, (void *)&(rect.end_y), size);
 
         vxMapImagePatch(gaussian7x7Images.at(level), &rect, 0, &vxImageMapId, &vxImageAddr, &vxImagePtr, VX_READ_AND_WRITE, VX_MEMORY_TYPE_HOST, 0);
-
         // Compute the descriptors
         Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
         computeDescriptors(cvOutputImages.at(level), keypoints, desc, pattern);
@@ -865,6 +852,8 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
 
         ERROR_CHECK_STATUS(registerUserExtensions(context));
 
+        double myScaleFactor = 1 / 1.2;
+
         vxInputImg = createVXImageFromCVMat(context, cvInputImg);
 
         vxPyramidImages.resize(nlevels);
@@ -873,8 +862,8 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
             double scaleImageWidth = cameraWidth;
             double scaleImageHeight = cameraHeight;
             for (uint8_t i = 1; i < nlevels; ++i) {
-                scaleImageWidth *= scaleFactor;
-                scaleImageHeight *= scaleFactor;
+                scaleImageWidth *= myScaleFactor;
+                scaleImageHeight *= myScaleFactor;
 
                 vxPyramidImages.at(i) = vxCreateVirtualImage(graph, scaleImageWidth, scaleImageHeight, VX_DF_IMAGE_U8);
             }
@@ -890,21 +879,19 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
             vx_size vxArraySize = 30 * 1000;
             fastCorners.at(0) = vxCreateArray(context, VX_TYPE_KEYPOINT, vxArraySize);
             for (uint8_t i = 1; i < nlevels; ++i) {
-                vxArraySize *= scaleFactor;
+                vxArraySize *= myScaleFactor;
                 fastCorners.at(i) = vxCreateArray(context, VX_TYPE_KEYPOINT, vxArraySize);
             }
         }
 
-        std::vector<vx_scalar> strength_thresh(nlevels);
         for(uint8_t i = 0; i < nlevels; ++i) {
             strength_thresh.at(i) = vxCreateScalar( context, VX_TYPE_FLOAT32, &fast_strength_thresh );
         }
-        std::vector<vx_scalar> num_corners(nlevels);
         for(uint8_t i = 0; i < nlevels; ++i) {
             num_corners.at(i) = vxCreateScalar( context, VX_TYPE_SIZE, &num_corners_value );
         }
         for(uint8_t i = 0; i < nlevels; ++i) {
-            nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 9, fast_strength_thresh, 6, num_corners.at(i));
+            fastCornersNodes.at(i) = nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 9, fast_strength_thresh, 6, num_corners.at(i));
         }
 
         u_max = createUMax(context, HALF_PATCH_SIZE);
@@ -913,7 +900,7 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
             vx_size vxArraySize = 30 * 1000;
             IC_AnglesCorners.at(0) = vxCreateArray(context, VX_TYPE_KEYPOINT, vxArraySize);
             for (uint8_t i = 1; i < nlevels; ++i) {
-                vxArraySize *= scaleFactor;
+                vxArraySize *= myScaleFactor;
                 IC_AnglesCorners.at(i) = vxCreateArray(context, VX_TYPE_KEYPOINT, vxArraySize);
             }
         }
@@ -923,23 +910,16 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
 
         {
             double outputImageWidth = cameraWidth, outputImageHeight = cameraHeight;
-            cvOutputImages.at(0) = cvInputImg;
+            cvOutputImages.at(0) = cv::Mat(outputImageHeight, outputImageWidth, CV_8UC1);
             for (uint8_t i = 1; i < nlevels; ++i) {
-                outputImageWidth *= scaleFactor;
-                outputImageHeight *= scaleFactor;
+                outputImageWidth *= myScaleFactor;
+                outputImageHeight *= myScaleFactor;
 
                 cvOutputImages.at(i) = cv::Mat(outputImageHeight, outputImageWidth, CV_8UC1);
             }
         }
-        {
-            double scaleImageWidth = cameraWidth;
-            double scaleImageHeight = cameraHeight;
-            for (uint8_t i = 0; i < nlevels; ++i) {
-                scaleImageWidth *= scaleFactor;
-                scaleImageHeight *= scaleFactor;
-
-                gaussian7x7Images.at(i) = createVXImageFromCVMat(context, cvOutputImages.at(i));
-            }
+        for (uint8_t i = 0; i < nlevels; ++i) {
+            gaussian7x7Images.at(i) = createVXImageFromCVMat(context, cvOutputImages.at(i));
         }
 
         vx_int32 gaussian7x7Coefs[7][7] = {

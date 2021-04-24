@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(ORB_SLAM2_CUDA)
 
-add_definitions(-DCOMPILEDWITHC11 -DIC_ANGLES_GPU)
+#add_definitions(-DCOMPILEDWITHC11 -DIC_ANGLES_GPU)
+add_definitions(-DCOMPILEDWITHC11)
 
 set(VISIONWORKS_DIR 1)
 set(OpenCV_VERSION 4.1.0)
