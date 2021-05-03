@@ -21,7 +21,7 @@
 #include "System.h"
 #include "Node.h"
 
-class StereoNode : public Node
+class StereoNode : public ROS_ORB_SLAM2::Node
 {
   public:
     StereoNode (const ORB_SLAM2::System::eSensor sensor, ros::NodeHandle &node_handle, image_transport::ImageTransport &image_transport);

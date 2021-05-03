@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+namespace ROS_ORB_SLAM2 {
 Node::Node (ORB_SLAM2::System::eSensor sensor, ros::NodeHandle &node_handle, image_transport::ImageTransport &image_transport) :  image_transport_(image_transport) {
   name_of_node_ = ros::this_node::getName();
   node_handle_ = node_handle;
@@ -361,4 +362,5 @@ void Node::LoadOrbParameters (ORB_SLAM2::ORBParameters& parameters) {
     ROS_ERROR ("Failed to get camera calibration parameters from the launch file.");
     throw std::runtime_error("No cam calibration");
   }
+}
 }

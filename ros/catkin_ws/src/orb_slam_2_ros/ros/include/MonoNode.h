@@ -37,7 +37,7 @@
 #include "Node.h"
 
 
-class MonoNode : public Node
+class MonoNode : public ROS_ORB_SLAM2::Node
 {
   public:
     MonoNode (const ORB_SLAM2::System::eSensor sensor, ros::NodeHandle &node_handle, image_transport::ImageTransport &image_transport);

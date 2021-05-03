@@ -40,7 +40,7 @@
 #include "Node.h"
 
 
-class RGBDNode : public Node
+class RGBDNode : public ROS_ORB_SLAM2::Node
 {
   public:
     RGBDNode (const ORB_SLAM2::System::eSensor sensor, ros::NodeHandle &node_handle, image_transport::ImageTransport &image_transport);
