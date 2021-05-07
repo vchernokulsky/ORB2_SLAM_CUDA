@@ -28,6 +28,6 @@
 vx_status registerUserExtensions(vx_context context);
 
 vx_node
-IC_AnglesNode(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array u_max, vx_array output_keypoints);
+IC_AnglesNode(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array output_keypoints);
 
 #endif //OPENVXFASTEXTRACTOR_USER_EXTENSIONS_H

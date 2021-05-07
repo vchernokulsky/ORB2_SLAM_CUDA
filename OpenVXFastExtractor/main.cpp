@@ -94,7 +94,6 @@ int main(void) {
         fastCornersNodes.at(i) = nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 9, fast_strength_thresh, 6, num_corners.at(i));
     }
 
-    vx_array u_max = createUMax(context, HALF_PATCH_SIZE);
     std::vector<vx_array> IC_AnglesCorners(levelsNum);
     {
         vx_size vxArraySize = 30 * 1000;
@@ -106,7 +105,8 @@ int main(void) {
     }
     std::vector<vx_node> IC_AnglesNodes(levelsNum);
     for(uint8_t i = 0; i < levelsNum; ++i) {
-        IC_AnglesNodes.at(i) = IC_AnglesNode(graph, vxPyramidImages.at(i), fastCorners.at(i), u_max, IC_AnglesCorners.at(i));
+        IC_AnglesNodes.at(i) = IC_AnglesNode(graph, vxPyramidImages.at(i), fastCorners.at(i), IC_AnglesCorners.at(i));
+        vxSetNodeTarget(IC_AnglesNodes.at(i), NVX_TARGET_GPU, NULL);
     }
 
     std::vector<cv::Mat> cvOutputImages(levelsNum);

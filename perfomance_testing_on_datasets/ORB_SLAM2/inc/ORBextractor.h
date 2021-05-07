@@ -122,12 +122,10 @@ protected:
     std::vector<vx_image> vxPyramidImages;
     std::vector<vx_image> gaussian7x7Images;
 
-    vx_array u_max;
     std::vector<vx_array> fastCorners;
     std::vector<vx_array> IC_AnglesCorners;
     std::vector<vx_scalar> strength_thresh;
     std::vector<vx_scalar> num_corners;
-    vx_convolution gaussian7x7;
 
     std::vector<vx_node> scaleNodes;
     std::vector<vx_node> fastCornersNodes;

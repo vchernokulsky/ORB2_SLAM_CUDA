@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.8)
 project(ORB_SLAM2_CUDA)
 
-#add_definitions(-DCOMPILEDWITHC11 -DIC_ANGLES_GPU)
-add_definitions(-DCOMPILEDWITHC11)
+ add_definitions(-DCOMPILEDWITHC11 -DIC_ANGLES_GPU)
+#add_definitions(-DCOMPILEDWITHC11)
 
 set(VISIONWORKS_DIR 1)
 set(OpenCV_VERSION 4.1.0)
@@ -15,6 +15,7 @@ message(STATUS "OpenCV version: " ${OpenCV_VERSION})
 find_package(VisionWorks REQUIRED)
 find_package(OpenCV ${OpenCV_VERSION} REQUIRED)
 find_package(Eigen3 3.1.0 REQUIRED)
+find_package(CUDA REQUIRED 10.2)
 
 include_directories(/usr/local/cuda-10.2/include)
 

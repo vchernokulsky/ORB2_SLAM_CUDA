@@ -5,8 +5,7 @@
 #include "../IC_Angles.h"
 
 void
-IC_Angles(const cv::Mat &image, vx_keypoint_t *kp_buf, vx_size kp_size, vx_size kp_stride, vx_int32 *u_max_buf,
-          vx_size u_max_size, vx_size u_max_stride)
+IC_Angles(const cv::Mat &image, vx_keypoint_t *kp_buf, vx_size kp_size, vx_size kp_stride)
 {
     int m_01, m_10;
     int step;
@@ -20,19 +19,20 @@ IC_Angles(const cv::Mat &image, vx_keypoint_t *kp_buf, vx_size kp_size, vx_size 
 
     for(vx_size kp_i = 0; kp_i < kp_size; kp_i++) {
         m_01 = 0, m_10 = 0;
+        kp = vxArrayItem(vx_keypoint_t, kp_buf, kp_i, kp_stride);
 
         const uchar *center = &image.at<uchar>(cvRound(kp.y), cvRound(kp.x));
         const unsigned int imageBytesSize = image.total() * image.elemSize();
         // Treat the center line differently, v=0
-        for (int u = -(int)(u_max_size - 1); u <= (int)(u_max_size -1); ++u)
+        for (int u = -HALF_PATCH_SIZE; u <= HALF_PATCH_SIZE; ++u)
             m_10 += u * center[u];
 
         // Go line by line in the circular patch
         step = (int) image.step1();
-        for (int v = 1; v <= (int)(u_max_size - 1); ++v) {
+        for (int v = 1; v <= HALF_PATCH_SIZE; ++v) {
             // Proceed over the two lines
             v_sum = 0;
-            d = vxArrayItem(vx_int32, u_max_buf, v, u_max_stride);
+            d = u_max[v];
             for (int u = -d; u <= d; ++u) {
                 if (imageBytesSize - kp.x - kp.y * step > u + v * step) {
                     val_plus = center[u + v * step];

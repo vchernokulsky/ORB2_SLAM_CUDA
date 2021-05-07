@@ -22,8 +22,6 @@ find_package(VisionWorks REQUIRED)
 find_package(OpenCV ${OpenCV_VERSION} REQUIRED)
 find_package(CUDA REQUIRED 10.2)
 
-enable_language(CUDA)
-
 file(GLOB SOURCES "*.cpp" ".c")
 file(GLOB HEADERS "*.h" "*.hpp")
 

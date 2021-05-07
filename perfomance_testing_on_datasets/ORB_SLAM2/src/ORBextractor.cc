@@ -894,7 +894,6 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
             fastCornersNodes.at(i) = nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 9, fast_strength_thresh, 6, num_corners.at(i));
         }
 
-        u_max = createUMax(context, HALF_PATCH_SIZE);
 
         {
             vx_size vxArraySize = 30 * 1000;
@@ -905,7 +904,7 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
             }
         }
         for(uint8_t i = 0; i < nlevels; ++i) {
-            IC_AnglesNodes.at(i) = IC_AnglesNode(graph, vxPyramidImages.at(i), fastCorners.at(i), u_max, IC_AnglesCorners.at(i));
+            IC_AnglesNodes.at(i) = IC_AnglesNode(graph, vxPyramidImages.at(i), fastCorners.at(i), IC_AnglesCorners.at(i));
         }
 
         {
