@@ -20,7 +20,7 @@ cuda_include_directories(
     /usr/local/cuda-10.2/include
 )
 
-cuda_add_library(${PROJECT_NAME} ${CUDA_SOURCES} ${CPP_SOURCES}
+cuda_add_library(${PROJECT_NAME} STATIC ${CUDA_SOURCES} ${CPP_SOURCES}
 )
 target_link_libraries(${PROJECT_NAME}
     opencv_core

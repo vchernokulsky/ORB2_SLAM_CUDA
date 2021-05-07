@@ -13,34 +13,48 @@ static vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_refer
 
 enum {
     USER_LIBRARY = 0x1,
-    USER_KERNEL_IC_ANGLE = VX_KERNEL_BASE(VX_ID_DEFAULT, USER_LIBRARY) + 0x0,
+    USER_KERNEL_IC_ANGLE_CPU = VX_KERNEL_BASE(VX_ID_DEFAULT, USER_LIBRARY) + 0x0,
+    USER_KERNEL_IC_ANGLE_GPU = VX_KERNEL_BASE(VX_ID_DEFAULT, USER_LIBRARY) + 0x1,
 };
 
 static vx_status VX_CALLBACK IC_Angles_validator(vx_node node, vx_reference const *parameters, vx_uint32 num, vx_meta_format *metas);
-static vx_status registerIC_Angles_kernel(vx_context context);
+static vx_status registerIC_Angles_kernels(vx_context context);
 
 vx_status registerUserExtensions(vx_context context) {
-    return registerIC_Angles_kernel(context);
+    return registerIC_Angles_kernels(context);
 }
 
 vx_node
-IC_AnglesNode(vx_graph graph, vx_image image, vx_array input_keypoints,  vx_array u_max, vx_array output_keypoints) {
+IC_AnglesNodeCpu(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array output_keypoints) {
     vx_context context = vxGetContext((vx_reference) graph);
-    vx_kernel kernel = vxGetKernelByEnum(context, USER_KERNEL_IC_ANGLE);
+    vx_kernel kernel = vxGetKernelByEnum(context, USER_KERNEL_IC_ANGLE_CPU);
     ERROR_CHECK_OBJECT(kernel);
     vx_node node = vxCreateGenericNode(graph, kernel);
     ERROR_CHECK_OBJECT(node);
     ERROR_CHECK_STATUS(vxSetParameterByIndex(node, 0, (vx_reference) image));
     ERROR_CHECK_STATUS(vxSetParameterByIndex(node, 1, (vx_reference) input_keypoints));
-    ERROR_CHECK_STATUS(vxSetParameterByIndex(node, 2, (vx_reference) u_max));
-    ERROR_CHECK_STATUS(vxSetParameterByIndex(node, 3, (vx_reference) output_keypoints));
+    ERROR_CHECK_STATUS(vxSetParameterByIndex(node, 2, (vx_reference) output_keypoints));
     ERROR_CHECK_STATUS(vxReleaseKernel(&kernel));
     return node;
 }
 
+vx_node
+IC_AnglesNodeGpu(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array output_keypoints) {
+vx_context context = vxGetContext((vx_reference) graph);
+vx_kernel kernel = vxGetKernelByEnum(context, USER_KERNEL_IC_ANGLE_GPU);
+ERROR_CHECK_OBJECT(kernel);
+vx_node node = vxCreateGenericNode(graph, kernel);
+ERROR_CHECK_OBJECT(node);
+ERROR_CHECK_STATUS(vxSetParameterByIndex(node, 0, (vx_reference) image));
+ERROR_CHECK_STATUS(vxSetParameterByIndex(node, 1, (vx_reference) input_keypoints));
+ERROR_CHECK_STATUS(vxSetParameterByIndex(node, 2, (vx_reference) output_keypoints));
+ERROR_CHECK_STATUS(vxReleaseKernel(&kernel));
+return node;
+}
+
 vx_status VX_CALLBACK
 IC_Angles_validator(vx_node node, vx_reference const *parameters, vx_uint32 num, vx_meta_format *metas) {
-    if (num != 4)
+    if (num != 3)
     {
         return VX_ERROR_INVALID_PARAMETERS;
     }
@@ -66,61 +80,59 @@ IC_Angles_validator(vx_node node, vx_reference const *parameters, vx_uint32 num,
     }
 
     ERROR_CHECK_STATUS(vxQueryArray((vx_array)parameters[2], VX_ARRAY_ITEMTYPE, &param_type, sizeof(param_type)));
-    if(param_type != VX_TYPE_INT32)
+    if(param_type != VX_TYPE_KEYPOINT)
     {
         vxAddLogEntry((vx_reference)node, VX_FAILURE, "Invalid array type for parameter 2");
         return VX_ERROR_INVALID_TYPE;
     }
 
-    ERROR_CHECK_STATUS(vxQueryArray((vx_array)parameters[3], VX_ARRAY_ITEMTYPE, &param_type, sizeof(param_type)));
-    if(param_type != VX_TYPE_KEYPOINT)
-    {
-        vxAddLogEntry((vx_reference)node, VX_FAILURE, "Invalid array type for parameter 3");
-        return VX_ERROR_INVALID_TYPE;
-    }
-
-    ERROR_CHECK_STATUS(vxSetMetaFormatFromReference(metas[3], parameters[1]))
+    ERROR_CHECK_STATUS(vxSetMetaFormatFromReference(metas[2], parameters[1]))
 
     return VX_SUCCESS;
 }
 
-vx_status registerIC_Angles_kernel(vx_context context) {
-    #ifdef IC_ANGLES_GPU
-    vx_kernel kernel = vxAddUserKernel(context,
-                                       "gpu:user.kernel.IC_Angle",
-                                       USER_KERNEL_IC_ANGLE,
-                                       IC_Angles_gpu_function,
-                                       4,
-                                       IC_Angles_validator,
-                                       NULL,
-                                       NULL);
-    #else
-    vx_kernel kernel = vxAddUserKernel(context,
-                                       "user.kernel.IC_Angle",
-                                       USER_KERNEL_IC_ANGLE,
-                                       IC_Angles_cpu_function,
-                                       4,
-                                       IC_Angles_validator,
-                                       NULL,
-                                       NULL);
-    #endif
-    ERROR_CHECK_OBJECT(kernel);
+vx_status registerIC_Angles_kernels(vx_context context) {
+    vx_kernel kernel_gpu = vxAddUserKernel(context,
+                                           "gpu:user.kernel.IC_AngleGpu",
+                                           USER_KERNEL_IC_ANGLE_GPU,
+                                           IC_Angles_gpu_function,
+                                           3,
+                                           IC_Angles_validator,
+                                           NULL,
+                                           NULL);
 
-    ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel, 0, VX_INPUT, VX_TYPE_IMAGE, VX_PARAMETER_STATE_REQUIRED));
-    ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel, 1, VX_INPUT, VX_TYPE_ARRAY, VX_PARAMETER_STATE_REQUIRED));
-    ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel, 2, VX_INPUT, VX_TYPE_ARRAY, VX_PARAMETER_STATE_REQUIRED));
-    ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel, 3, VX_OUTPUT, VX_TYPE_ARRAY, VX_PARAMETER_STATE_REQUIRED));
-    ERROR_CHECK_STATUS(vxFinalizeKernel(kernel));
-    ERROR_CHECK_STATUS(vxReleaseKernel(&kernel));
+    ERROR_CHECK_OBJECT(kernel_gpu);
+
+    ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel_gpu, 0, VX_INPUT, VX_TYPE_IMAGE, VX_PARAMETER_STATE_REQUIRED));
+    ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel_gpu, 1, VX_INPUT, VX_TYPE_ARRAY, VX_PARAMETER_STATE_REQUIRED));
+    ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel_gpu, 2, VX_OUTPUT, VX_TYPE_ARRAY, VX_PARAMETER_STATE_REQUIRED));
+    ERROR_CHECK_STATUS(vxFinalizeKernel(kernel_gpu));
+    ERROR_CHECK_STATUS(vxReleaseKernel(&kernel_gpu));
+
+    vx_kernel kernel_cpu = vxAddUserKernel(context,
+                                           "user.kernel.IC_AngleCpu",
+                                           USER_KERNEL_IC_ANGLE_CPU,
+                                           IC_Angles_cpu_function,
+                                           3,
+                                           IC_Angles_validator,
+                                           NULL,
+                                           NULL);
+    ERROR_CHECK_OBJECT(kernel_cpu);
+
+    ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel_cpu, 0, VX_INPUT, VX_TYPE_IMAGE, VX_PARAMETER_STATE_REQUIRED));
+    ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel_cpu, 1, VX_INPUT, VX_TYPE_ARRAY, VX_PARAMETER_STATE_REQUIRED));
+    ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel_cpu, 2, VX_OUTPUT, VX_TYPE_ARRAY, VX_PARAMETER_STATE_REQUIRED));
+    ERROR_CHECK_STATUS(vxFinalizeKernel(kernel_cpu));
+    ERROR_CHECK_STATUS(vxReleaseKernel(&kernel_cpu));
     return VX_SUCCESS;
 }
 
 vx_status VX_CALLBACK IC_Angles_cpu_function(vx_node node, const vx_reference *refs, vx_uint32 num) {
     vx_image vxImage = (vx_image) refs[0];
     vx_array vxInputKeyPoints = (vx_array) refs[1];
-    vx_array uMaxArray = (vx_array) refs[2];
-    vx_array vxOutputKeyPoints = (vx_array) refs[3];
+    vx_array vxOutputKeyPoints = (vx_array) refs[2];
 
+    vxTruncateArray(vxOutputKeyPoints, 0);
     vx_size input_kp_size = 0;
     vxQueryArray(vxInputKeyPoints, VX_ARRAY_NUMITEMS, &input_kp_size, sizeof(input_kp_size));
 
@@ -139,14 +151,6 @@ vx_status VX_CALLBACK IC_Angles_cpu_function(vx_node node, const vx_reference *r
 
         const cv::Mat cvImage(vxImageHeight, vxImageWidth, CV_8U, image_data_ptr, image_addr.stride_y);
 
-        vx_size u_max_size = 0;
-        vxQueryArray(uMaxArray, VX_ARRAY_NUMITEMS, &u_max_size, sizeof(u_max_size));
-        vx_size u_max_stride;
-        vx_map_id u_max_map_id;
-        vx_int32 *u_max_buf;
-        ERROR_CHECK_STATUS(vxMapArrayRange(uMaxArray, 0, u_max_size, &u_max_map_id, &u_max_stride, (void **) &u_max_buf,
-                                           VX_READ_ONLY, VX_MEMORY_TYPE_HOST, 0));
-
         vx_size input_kp_stride;
         vx_map_id input_kp_map_id;
         vx_keypoint_t *input_kp_buf;
@@ -163,11 +167,10 @@ vx_status VX_CALLBACK IC_Angles_cpu_function(vx_node node, const vx_reference *r
                 vxMapArrayRange(vxOutputKeyPoints, 0, input_kp_size, &output_kp_map_id, &output_kp_stride, (void **) &output_kp_buf, VX_READ_AND_WRITE,
                                 VX_MEMORY_TYPE_HOST, 0));
 
-        IC_Angles(cvImage, output_kp_buf, input_kp_size, output_kp_stride, u_max_buf, u_max_size, u_max_stride);
+        IC_Angles(cvImage, output_kp_buf, input_kp_size, output_kp_stride);
 
         ERROR_CHECK_STATUS(vxUnmapImagePatch(vxImage, image_map_id));
         ERROR_CHECK_STATUS(vxUnmapArrayRange(vxInputKeyPoints, input_kp_map_id));
-        ERROR_CHECK_STATUS(vxUnmapArrayRange(uMaxArray, u_max_map_id));
         ERROR_CHECK_STATUS(vxUnmapArrayRange(vxOutputKeyPoints, output_kp_map_id));
     }
 
@@ -177,8 +180,9 @@ vx_status VX_CALLBACK IC_Angles_cpu_function(vx_node node, const vx_reference *r
 vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference *refs, vx_uint32 num) {
     vx_image vxImage = (vx_image) refs[0];
     vx_array vxInputKeyPoints = (vx_array) refs[1];
-    vx_array uMaxArray = (vx_array) refs[2];
-    vx_array vxOutputKeyPoints = (vx_array) refs[3];
+    vx_array vxOutputKeyPoints = (vx_array) refs[2];
+
+    vxTruncateArray(vxOutputKeyPoints, 0);
 
     vx_size input_kp_size = 0;
     vxQueryArray(vxInputKeyPoints, VX_ARRAY_NUMITEMS, &input_kp_size, sizeof(input_kp_size));
@@ -206,18 +210,9 @@ vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference *r
         vx_keypoint_t *input_kp_buf;
         ERROR_CHECK_STATUS(
                 vxMapArrayRange(vxInputKeyPoints, 0, input_kp_size, &input_kp_map_id, &input_kp_stride, (void **) &input_kp_buf, VX_READ_ONLY,
-                                NVX_MEMORY_TYPE_CUDA, 0));
+                                VX_MEMORY_TYPE_HOST, 0));
 
-        vx_size u_max_size = 0;
-        vxQueryArray(uMaxArray, VX_ARRAY_NUMITEMS, &u_max_size, sizeof(u_max_size));
-        vx_size u_max_stride;
-        vx_map_id u_max_map_id;
-        vx_int32 *u_max_buf;
-        ERROR_CHECK_STATUS(vxMapArrayRange(uMaxArray, 0, u_max_size, &u_max_map_id, &u_max_stride, (void **) &u_max_buf,
-                                           VX_READ_ONLY, NVX_MEMORY_TYPE_CUDA, 0));
-
-        vx_keypoint_t k;
-        vxAddArrayItems(vxOutputKeyPoints, 1, &k, sizeof(vx_keypoint_t));
+        vxAddArrayItems(vxOutputKeyPoints, input_kp_size, input_kp_buf, input_kp_stride);
 
         vx_size output_kp_size = 0;
         vxQueryArray(vxOutputKeyPoints, VX_ARRAY_NUMITEMS, &output_kp_size, sizeof(output_kp_size));
@@ -228,13 +223,10 @@ vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference *r
                 vxMapArrayRange(vxOutputKeyPoints, 0, output_kp_size, &output_kp_map_id, &output_kp_stride, (void **) &output_kp_buf, VX_WRITE_ONLY,
                                 NVX_MEMORY_TYPE_CUDA, 0));
 
-        vxCopyArrayRange(vxInputKeyPoints, 0, input_kp_size, input_kp_stride, output_kp_buf, VX_READ_ONLY, NVX_MEMORY_TYPE_CUDA);
-
-        IC_Angles_gpu(cvImage, output_kp_buf, input_kp_size, output_kp_stride,u_max_buf, u_max_size, u_max_stride,  stream);
+        IC_Angles_gpu(cvImage, output_kp_buf, input_kp_size, output_kp_stride, stream);
 
         ERROR_CHECK_STATUS(vxUnmapImagePatch(vxImage, image_map_id));
         ERROR_CHECK_STATUS(vxUnmapArrayRange(vxInputKeyPoints, input_kp_map_id));
-        ERROR_CHECK_STATUS(vxUnmapArrayRange(uMaxArray, u_max_map_id));
         ERROR_CHECK_STATUS(vxUnmapArrayRange(vxOutputKeyPoints, output_kp_map_id));
     }
 

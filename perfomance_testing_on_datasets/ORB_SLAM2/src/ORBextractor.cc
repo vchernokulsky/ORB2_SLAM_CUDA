@@ -871,12 +871,19 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
 
         for(uint8_t i = 1; i < nlevels; ++i) {
             scaleNodes.at(i - 1) = vxScaleImageNode(graph, vxPyramidImages.at(i - 1), vxPyramidImages.at(i), VX_INTERPOLATION_BILINEAR);
+
+            if (i < 8) {
+                vxSetNodeTarget(scaleNodes.at(i - 1), NVX_TARGET_GPU, NULL);
+            }
+            else {
+                vxSetNodeTarget(scaleNodes.at(i - 1), NVX_TARGET_CPU, NULL);
+            }
         }
 
         vx_float32 fast_strength_thresh  = 20.0f;
         vx_size num_corners_value;
         {
-            vx_size vxArraySize = 30 * 1000;
+            vx_size vxArraySize = 2 * 1000;
             fastCorners.at(0) = vxCreateArray(context, VX_TYPE_KEYPOINT, vxArraySize);
             for (uint8_t i = 1; i < nlevels; ++i) {
                 vxArraySize *= myScaleFactor;
@@ -892,19 +899,34 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
         }
         for(uint8_t i = 0; i < nlevels; ++i) {
             fastCornersNodes.at(i) = nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 9, fast_strength_thresh, 6, num_corners.at(i));
+
+            if (i < 8) {
+                vxSetNodeTarget(fastCornersNodes.at(i), NVX_TARGET_GPU, NULL);
+            }
+            else {
+                vxSetNodeTarget(fastCornersNodes.at(i), NVX_TARGET_CPU, NULL);
+            }
         }
 
 
         {
-            vx_size vxArraySize = 30 * 1000;
+            vx_size vxArraySize = 2 * 1000;
             IC_AnglesCorners.at(0) = vxCreateArray(context, VX_TYPE_KEYPOINT, vxArraySize);
             for (uint8_t i = 1; i < nlevels; ++i) {
                 vxArraySize *= myScaleFactor;
                 IC_AnglesCorners.at(i) = vxCreateArray(context, VX_TYPE_KEYPOINT, vxArraySize);
             }
         }
+
         for(uint8_t i = 0; i < nlevels; ++i) {
-            IC_AnglesNodes.at(i) = IC_AnglesNode(graph, vxPyramidImages.at(i), fastCorners.at(i), IC_AnglesCorners.at(i));
+                if (i < 8) {
+                    IC_AnglesNodes.at(i) = IC_AnglesNodeGpu(graph, vxPyramidImages.at(i), fastCorners.at(i),
+                                                            IC_AnglesCorners.at(i));
+                }
+                else {
+                    IC_AnglesNodes.at(i) = IC_AnglesNodeCpu(graph, vxPyramidImages.at(i), fastCorners.at(i),
+                                                            IC_AnglesCorners.at(i));
+                }
         }
 
         {

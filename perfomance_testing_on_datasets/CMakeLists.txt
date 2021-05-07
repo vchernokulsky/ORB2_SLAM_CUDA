@@ -1,8 +1,16 @@
 cmake_minimum_required(VERSION 3.8)
 project(ORB_SLAM2_CUDA)
 
- add_definitions(-DCOMPILEDWITHC11 -DIC_ANGLES_GPU)
-#add_definitions(-DCOMPILEDWITHC11)
+IF(NOT CMAKE_BUILD_TYPE)
+    SET(CMAKE_BUILD_TYPE Release)
+ENDIF()
+
+MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall")
+
+add_definitions(-DCOMPILEDWITHC11)
 
 set(VISIONWORKS_DIR 1)
 set(OpenCV_VERSION 4.1.0)
