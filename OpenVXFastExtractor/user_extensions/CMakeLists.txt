@@ -1,35 +1,17 @@
-#get_filename_component(project_dir ${CMAKE_CURRENT_LIST_DIR} NAME)
-#project(${project_dir})
-#
-#set(OPENVX_DIR "/home/denis/OpenVX-sample-impl")
-#set(OpenVX_INCLUDE_DIRS "/home/denis/OpenVX-sample-impl/install/Linux/x64/Release/include")
-#set(OpenVX_LIBS_DIRS "/home/denis/OpenVX-sample-impl/install/Linux/x64/Release/bin")
-#
-#find_package(OpenCV ${OpenCV_VERSION} REQUIRED)
-#
-#file(GLOB SOURCES "*/*/*.cpp" "*/*/*.c" "*/*.cpp" "*/*.c" "*.cpp" "*.c")
-#file(GLOB HEADERS "*/*/*.h" "*/*/*.hpp" "*/*.h" "*/*.hpp" "*.h" "*.hpp")
-#
-#include_directories(
-#        ${OpenVX_INCLUDE_DIRS}
-#        ${OpenCV_INCLUDE_DIRS}
-#        ${project_dir}
-#)
-#
-#add_library(${PROJECT_NAME} ${SOURCES})
-#target_link_libraries(${PROJECT_NAME}
-#    opencv_core
-#    openvx
-#)
-
 get_filename_component(project_dir ${CMAKE_CURRENT_LIST_DIR} NAME)
 project(${project_dir})
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CUDA_SEPARABLE_COMPILATION ON)
+set(CMAKE_CUDA_COMPILER "/usr/local/cuda-10.2/bin/nvcc")
+set(CMAKE_CUDA_HOST_COMPILER "g++")
 
-file(GLOB CPP_SOURCES "*/*/*.cpp" "*/*.cpp" "*.cpp")
-file(GLOB CUDA_SOURCES "*/*/*.cu" "*/*.cu" "*.cu" ${CPP_SOURCES})
-file(GLOB HEADERS "*/*/*.h" "*/*.h" "*.h" "*/*/*.cuh" "*/*.cuh" "*.cuh")
+file(GLOB_RECURSE CPP_SOURCES *.cpp)
+file(GLOB_RECURSE CUDA_SOURCES "*.cu")
+
+find_package(CUDA REQUIRED 10.2)
+
+enable_language(CUDA)
 
 cuda_include_directories(
     ${project_dir}
@@ -38,7 +20,7 @@ cuda_include_directories(
     /usr/local/cuda-10.2/include
 )
 
-cuda_add_library(${PROJECT_NAME} ${CUDA_SOURCES}
+cuda_add_library(${PROJECT_NAME} STATIC ${CUDA_SOURCES} ${CPP_SOURCES}
 )
 target_link_libraries(${PROJECT_NAME}
     opencv_core

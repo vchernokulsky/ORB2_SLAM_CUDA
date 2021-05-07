@@ -11,7 +11,6 @@
 #include "../util.h"
 #include "../user_extensions.h"
 #include "VX/vx.h"
-
 const int HALF_PATCH_SIZE = 15;
 
 void IC_Angles(const cv::Mat &image, vx_keypoint_t *kp_buf, vx_size kp_size, vx_size kp_stride, vx_int32 *u_max_buf, vx_size u_max_size, vx_size u_max_stride);
@@ -75,7 +74,6 @@ inline vx_array createUMax(vx_context context, vx_size u_max_size) {
     int v, v0, vmax = localFloor(u_max_size * sqrt(2.f) / 2 + 1);
     int vmin = localCeil(u_max_size * sqrt(2.f) / 2);
     const double hp2 = u_max_size*u_max_size;
-
 
     for (v = 0; v <= vmax; ++v)
         u_max_data[v] = localRound(sqrt(hp2 - v * v));
