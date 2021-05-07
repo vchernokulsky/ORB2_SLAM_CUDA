@@ -85,7 +85,7 @@ IC_Angles_validator(vx_node node, vx_reference const *parameters, vx_uint32 num,
 }
 
 vx_status registerIC_Angles_kernel(vx_context context) {
-    #ifdef IC_ANGLES_GPU
+#ifdef IC_ANGLES_GPU
     vx_kernel kernel = vxAddUserKernel(context,
                                        "gpu:user.kernel.IC_Angle",
                                        USER_KERNEL_IC_ANGLE,
@@ -94,7 +94,7 @@ vx_status registerIC_Angles_kernel(vx_context context) {
                                        IC_Angles_validator,
                                        NULL,
                                        NULL);
-    #else
+#else
     vx_kernel kernel = vxAddUserKernel(context,
                                        "user.kernel.IC_Angle",
                                        USER_KERNEL_IC_ANGLE,
@@ -103,7 +103,7 @@ vx_status registerIC_Angles_kernel(vx_context context) {
                                        IC_Angles_validator,
                                        NULL,
                                        NULL);
-    #endif
+#endif
     ERROR_CHECK_OBJECT(kernel);
 
     ERROR_CHECK_STATUS(vxAddParameterToKernel(kernel, 0, VX_INPUT, VX_TYPE_IMAGE, VX_PARAMETER_STATE_REQUIRED));
@@ -121,6 +121,7 @@ vx_status VX_CALLBACK IC_Angles_cpu_function(vx_node node, const vx_reference *r
     vx_array uMaxArray = (vx_array) refs[2];
     vx_array vxOutputKeyPoints = (vx_array) refs[3];
 
+    vxTruncateArray(vxOutputKeyPoints, 0);
     vx_size input_kp_size = 0;
     vxQueryArray(vxInputKeyPoints, VX_ARRAY_NUMITEMS, &input_kp_size, sizeof(input_kp_size));
 
@@ -180,6 +181,8 @@ vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference *r
     vx_array uMaxArray = (vx_array) refs[2];
     vx_array vxOutputKeyPoints = (vx_array) refs[3];
 
+    vxTruncateArray(vxOutputKeyPoints, 0);
+
     vx_size input_kp_size = 0;
     vxQueryArray(vxInputKeyPoints, VX_ARRAY_NUMITEMS, &input_kp_size, sizeof(input_kp_size));
 
@@ -206,7 +209,9 @@ vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference *r
         vx_keypoint_t *input_kp_buf;
         ERROR_CHECK_STATUS(
                 vxMapArrayRange(vxInputKeyPoints, 0, input_kp_size, &input_kp_map_id, &input_kp_stride, (void **) &input_kp_buf, VX_READ_ONLY,
-                                NVX_MEMORY_TYPE_CUDA, 0));
+                                VX_MEMORY_TYPE_HOST, 0));
+
+        vxAddArrayItems(vxOutputKeyPoints, input_kp_size, input_kp_buf, input_kp_stride);
 
         vx_size u_max_size = 0;
         vxQueryArray(uMaxArray, VX_ARRAY_NUMITEMS, &u_max_size, sizeof(u_max_size));
@@ -216,9 +221,6 @@ vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference *r
         ERROR_CHECK_STATUS(vxMapArrayRange(uMaxArray, 0, u_max_size, &u_max_map_id, &u_max_stride, (void **) &u_max_buf,
                                            VX_READ_ONLY, NVX_MEMORY_TYPE_CUDA, 0));
 
-        vx_keypoint_t k;
-        vxAddArrayItems(vxOutputKeyPoints, 1, &k, sizeof(vx_keypoint_t));
-
         vx_size output_kp_size = 0;
         vxQueryArray(vxOutputKeyPoints, VX_ARRAY_NUMITEMS, &output_kp_size, sizeof(output_kp_size));
         vx_size output_kp_stride;
@@ -227,8 +229,6 @@ vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference *r
         ERROR_CHECK_STATUS(
                 vxMapArrayRange(vxOutputKeyPoints, 0, output_kp_size, &output_kp_map_id, &output_kp_stride, (void **) &output_kp_buf, VX_WRITE_ONLY,
                                 NVX_MEMORY_TYPE_CUDA, 0));
-
-        vxCopyArrayRange(vxInputKeyPoints, 0, input_kp_size, input_kp_stride, output_kp_buf, VX_READ_ONLY, NVX_MEMORY_TYPE_CUDA);
 
         IC_Angles_gpu(cvImage, output_kp_buf, input_kp_size, output_kp_stride,u_max_buf, u_max_size, u_max_stride,  stream);
 
