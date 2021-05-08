@@ -872,7 +872,7 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
         for(uint8_t i = 1; i < nlevels; ++i) {
             scaleNodes.at(i - 1) = vxScaleImageNode(graph, vxPyramidImages.at(i - 1), vxPyramidImages.at(i), VX_INTERPOLATION_BILINEAR);
 
-            if (i < 7) {
+            if (i < 4) {
                 vxSetNodeTarget(scaleNodes.at(i - 1), NVX_TARGET_GPU, NULL);
             }
             else {
@@ -897,15 +897,20 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
         for(uint8_t i = 0; i < nlevels; ++i) {
             num_corners.at(i) = vxCreateScalar( context, VX_TYPE_SIZE, &num_corners_value );
         }
-        for(uint8_t i = 0; i < nlevels; ++i) {
-            fastCornersNodes.at(i) = nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 9, fast_strength_thresh, 6, num_corners.at(i));
 
-            if (i < 8) {
-                vxSetNodeTarget(fastCornersNodes.at(i), NVX_TARGET_GPU, NULL);
-            }
-            else {
-                vxSetNodeTarget(fastCornersNodes.at(i), NVX_TARGET_CPU, NULL);
-            }
+//std::vector<vx_scalar> strength_thresh(nlevels);
+  //  for(uint8_t i = 0; i < nlevels; ++i) {
+    //    strength_thresh.at(i) = vxCreateScalar( context, VX_TYPE_FLOAT32, &fast_strength_thresh );
+    //}
+
+        for(uint8_t i = 0; i < nlevels; ++i) {
+        //fastCornersNodes.at(i) = vxFastCornersNode(graph,
+          //                                       vxPyramidImages.at(i),
+            //                                   strength_thresh.at(i),
+              //                               vx_true_e,
+                //                           fastCorners.at(i),
+                  //                       num_corners.at(i));
+            fastCornersNodes.at(i) = nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 9, fast_strength_thresh, 6, num_corners.at(i));
         }
 
 
@@ -919,7 +924,7 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
         }
 
         for(uint8_t i = 0; i < nlevels; ++i) {
-                if (i < 7) {
+                if (i < 6) {
                     IC_AnglesNodes.at(i) = IC_AnglesNodeGpu(graph, vxPyramidImages.at(i), fastCorners.at(i),
                                                             IC_AnglesCorners.at(i));
                 }
