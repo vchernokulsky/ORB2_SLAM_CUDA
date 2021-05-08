@@ -220,7 +220,7 @@ vx_status VX_CALLBACK IC_Angles_gpu_function(vx_node node, const vx_reference *r
         vx_map_id output_kp_map_id;
         vx_keypoint_t *output_kp_buf;
         ERROR_CHECK_STATUS(
-                vxMapArrayRange(vxOutputKeyPoints, 0, output_kp_size, &output_kp_map_id, &output_kp_stride, (void **) &output_kp_buf, VX_WRITE_ONLY,
+                vxMapArrayRange(vxOutputKeyPoints, 0, output_kp_size, &output_kp_map_id, &output_kp_stride, (void **) &output_kp_buf, VX_READ_AND_WRITE,
                                 NVX_MEMORY_TYPE_CUDA, 0));
 
         IC_Angles_gpu(cvImage, output_kp_buf, input_kp_size, output_kp_stride, stream);

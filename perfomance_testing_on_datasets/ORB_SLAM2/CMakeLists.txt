@@ -13,11 +13,14 @@ file(GLOB HEADERS
 	"inc/*.hpp"
 )
 
+find_package(Pangolin REQUIRED)
+
 include_directories(
 	${PROJECT_SOURCE_DIR}/..
 	${PROJECT_SOURCE_DIR}/inc
 	${EIGEN3_INCLUDE_DIR}
 	${OpenCV_INCLUDE_DIRS}
+    ${Pangolin_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME} STATIC ${SOURCES})

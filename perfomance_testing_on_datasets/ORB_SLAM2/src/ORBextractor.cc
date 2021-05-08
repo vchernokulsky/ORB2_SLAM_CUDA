@@ -872,7 +872,7 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
         for(uint8_t i = 1; i < nlevels; ++i) {
             scaleNodes.at(i - 1) = vxScaleImageNode(graph, vxPyramidImages.at(i - 1), vxPyramidImages.at(i), VX_INTERPOLATION_BILINEAR);
 
-            if (i < 8) {
+            if (i < 7) {
                 vxSetNodeTarget(scaleNodes.at(i - 1), NVX_TARGET_GPU, NULL);
             }
             else {
@@ -880,7 +880,7 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
             }
         }
 
-        vx_float32 fast_strength_thresh  = 20.0f;
+        vx_float32 fast_strength_thresh  = 7.0f;
         vx_size num_corners_value;
         {
             vx_size vxArraySize = 2 * 1000;
@@ -919,7 +919,7 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
         }
 
         for(uint8_t i = 0; i < nlevels; ++i) {
-                if (i < 8) {
+                if (i < 7) {
                     IC_AnglesNodes.at(i) = IC_AnglesNodeGpu(graph, vxPyramidImages.at(i), fastCorners.at(i),
                                                             IC_AnglesCorners.at(i));
                 }
