@@ -31,6 +31,9 @@ vx_node
 IC_AnglesNodeCpu(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array output_keypoints);
 
 vx_node
+IC_AnglesNodeGpu(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array output_keypoints);
+
+vx_node
 copyMakeBorderCpuNode(vx_graph graph, vx_image inputImage, vx_image outputImage, vx_scalar borderWidth);
 
 vx_node

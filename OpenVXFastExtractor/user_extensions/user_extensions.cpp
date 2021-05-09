@@ -47,6 +47,20 @@ IC_AnglesNodeCpu(vx_graph graph, vx_image image, vx_array input_keypoints, vx_ar
     return node;
 }
 
+vx_node
+IC_AnglesNodeGpu(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array output_keypoints) {
+    vx_context context = vxGetContext((vx_reference) graph);
+    vx_kernel kernel = vxGetKernelByEnum(context, USER_KERNEL_IC_ANGLE_GPU);
+    ERROR_CHECK_OBJECT(kernel);
+    vx_node node = vxCreateGenericNode(graph, kernel);
+    ERROR_CHECK_OBJECT(node);
+    ERROR_CHECK_STATUS(vxSetParameterByIndex(node, 0, (vx_reference) image));
+    ERROR_CHECK_STATUS(vxSetParameterByIndex(node, 1, (vx_reference) input_keypoints));
+    ERROR_CHECK_STATUS(vxSetParameterByIndex(node, 2, (vx_reference) output_keypoints));
+    ERROR_CHECK_STATUS(vxReleaseKernel(&kernel));
+    return node;
+}
+
 vx_status VX_CALLBACK
 IC_Angles_validator(vx_node node, vx_reference const *parameters, vx_uint32 num, vx_meta_format *metas) {
     if (num != 3)
