@@ -28,6 +28,11 @@
 vx_status registerUserExtensions(vx_context context);
 
 vx_node
-IC_AnglesNode(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array output_keypoints);
+IC_AnglesNodeCpu(vx_graph graph, vx_image image, vx_array input_keypoints, vx_array output_keypoints);
 
+vx_node
+copyMakeBorderCpuNode(vx_graph graph, vx_image inputImage, vx_image outputImage, vx_scalar borderWidth);
+
+vx_node
+copyMakeBorderGpuNode(vx_graph graph, vx_image inputImage, vx_image outputImage, vx_scalar borderWidth);
 #endif //OPENVXFASTEXTRACTOR_USER_EXTENSIONS_H

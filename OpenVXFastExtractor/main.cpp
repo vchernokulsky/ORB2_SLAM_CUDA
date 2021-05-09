@@ -105,7 +105,7 @@ int main(void) {
     }
     std::vector<vx_node> IC_AnglesNodes(levelsNum);
     for(uint8_t i = 0; i < levelsNum; ++i) {
-        IC_AnglesNodes.at(i) = IC_AnglesNode(graph, vxPyramidImages.at(i), fastCorners.at(i), IC_AnglesCorners.at(i));
+        IC_AnglesNodes.at(i) = IC_AnglesNodeCpu(graph, vxPyramidImages.at(i), fastCorners.at(i), IC_AnglesCorners.at(i));
         vxSetNodeTarget(IC_AnglesNodes.at(i), NVX_TARGET_GPU, NULL);
     }
 
