@@ -25,14 +25,11 @@ IC_Angles(const cv::Mat &image, vx_keypoint_t *kp_buf, vx_size kp_size, vx_size 
 
         if (kp.x > 15 && kp.x < image.size().width - 15 && kp.y > 15 && kp.y < image.size().height - 15) {
             const uchar *center = &image.at<uchar>(cvRound(kp.y), cvRound(kp.x));
-            // Treat the center line differently, v=0
             for (u = -HALF_PATCH_SIZE; u <= HALF_PATCH_SIZE; ++u)
                 m_10 += u * center[u];
 
-            // Go line by line in the circular patch
             step = (int) image.step1();
             for (v = 1; v <= HALF_PATCH_SIZE; ++v) {
-                // Proceed over the two lines
                 v_sum = 0;
                 d = u_max[v];
                 for (u = -d; u <= d; ++u) {

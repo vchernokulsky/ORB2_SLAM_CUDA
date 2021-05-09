@@ -131,6 +131,9 @@ protected:
     std::vector<vx_node> fastCornersNodes;
     std::vector<vx_node> IC_AnglesNodes;
     std::vector<vx_node> gaussian7x7Nodes;
+    
+    std::vector<double> imgLevelWidth;
+    std::vector<double> imgLevelHeight;
 };
 
 } //namespace ORB_SLAM

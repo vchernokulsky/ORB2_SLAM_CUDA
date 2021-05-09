@@ -11,7 +11,7 @@ file(GLOB_RECURSE CUDA_SOURCES "*.cu")
 
 find_package(CUDA REQUIRED 10.0)
 
-enable_language(CUDA)
+#enable_language(CUDA)
 
 cuda_include_directories(
     ${project_dir}

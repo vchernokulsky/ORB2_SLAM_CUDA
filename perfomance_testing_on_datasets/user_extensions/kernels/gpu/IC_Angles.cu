@@ -56,11 +56,9 @@ IC_Angle_kernel(const cv::cuda::PtrStepb image, vx_keypoint_t *kp_buf, vx_size k
         }
 
         if (threadIdx.x == 0) {
-            float kp_dir = atan2f((float) m_01, (float) m_10);
-            kp_dir += (kp_dir < 0) * (2.0f * CV_PI_F);
-            kp_dir *= 180.0f / CV_PI_F;
-
-            vxArrayItem(vx_keypoint_t, kp_buf, ptidx, kp_stride).orientation = kp_dir;
+            vxArrayItem(vx_keypoint_t, kp_buf, ptidx, kp_stride).orientation = atan2f((float) m_01, (float) m_10);
+            vxArrayItem(vx_keypoint_t, kp_buf, ptidx, kp_stride).orientation += (vxArrayItem(vx_keypoint_t, kp_buf, ptidx, kp_stride).orientation < 0) * (2.0f * CV_PI_F);
+            vxArrayItem(vx_keypoint_t, kp_buf, ptidx, kp_stride).orientation *= 180.0f / CV_PI_F;
         }
     }
 }
@@ -72,7 +70,4 @@ void IC_Angles_gpu(const cv::cuda::GpuMat &image, vx_keypoint_t *kp_buf, vx_size
     dim3 grid(cv::cuda::device::divUp(kp_size, block.y));
 
     IC_Angle_kernel<<<grid, block, 0, stream>>>(image, kp_buf, kp_size, kp_stride);
-
-    if (stream == 0)
-        cudaSafeCall(cudaDeviceSynchronize());
 }
