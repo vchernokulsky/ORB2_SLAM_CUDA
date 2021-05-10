@@ -1,0 +1,11 @@
+# ninja log v5
+0	2719	1614360796	opencv_util/CMakeFiles/opencv_util.dir/opencv_interop.cpp.o	5a3da2c9fb883357
+2720	2830	1614360796	opencv_util/libopencv_util.a	da8621d717316262
+0	5511	1614360799	user_extensions/CMakeFiles/user_extensions.dir/kernels/gpu/user_extensions_generated_IC_Angles.cu.o	5b992f4fbda8a7a1
+5511	5806	1614360799	user_extensions/CMakeFiles/user_extensions.dir/user_extensions_intermediate_link.o	6c6ba221062c904
+5806	6429	1614360800	user_extensions/CMakeFiles/user_extensions.dir/kernels/cpu/IC_Angles.cpp.o	4027cc78f97f078e
+5813	6576	1614360800	user_extensions/CMakeFiles/user_extensions.dir/user_extensions.cpp.o	a6f08c0698b7045e
+6576	6581	1614360800	user_extensions/libuser_extensions.a	f38644be622eaf61
+5806	8150	1614360802	CMakeFiles/OpenVXFastExtractor.dir/main.cpp.o	2a89de9ee6fc8d3b
+8150	9066	1614360803	OpenVXFastExtractor	c1b556f5b4b60c24
+1	85	1614360871	build.ninja	3611d5b4c7824819

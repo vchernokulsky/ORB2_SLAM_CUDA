@@ -1,0 +1,2 @@
+/usr/bin/ar qc libopencv_util.a  CMakeFiles/opencv_util.dir/opencv_interop.cpp.o
+/usr/bin/ranlib libopencv_util.a
