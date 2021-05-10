@@ -84,7 +84,6 @@ namespace ORB_SLAM2
         center[cvRound(pattern[idx].x*b + pattern[idx].y*a)*step + \
                cvRound(pattern[idx].x*a - pattern[idx].y*b)]
 
-
         for (int i = 0; i < 32; ++i, pattern += 16)
         {
             int t0, t1, val;
@@ -107,7 +106,6 @@ namespace ORB_SLAM2
 
             desc[i] = (uchar)val;
         }
-
 #undef GET_VALUE
     }
 
@@ -716,7 +714,7 @@ namespace ORB_SLAM2
                                    const vector<Point>& pattern)
     {
         descriptors = Mat::zeros((int)keypoints.size(), 32, CV_8UC1);
-
+        //#pragma omp parallel for
         for (size_t i = 0; i < keypoints.size(); i++)
             computeOrbDescriptor(keypoints[i], image, &pattern[0], descriptors.ptr((int)i));
     }
@@ -724,49 +722,42 @@ namespace ORB_SLAM2
     void ORBextractor::ComputeKeyPointsOctTree(vector<vector<KeyPoint> >& allKeypoints) {
         allKeypoints.resize(nlevels);
 
-        for (int level = 0; level < nlevels; ++level) {
+        int scaledPatchSize;
+        vx_size corners_count = 0;
+
+        vx_map_id IC_AnglesKpMapId;
+        vx_uint8 * IC_AnglesKpBuf;
+        vx_size kpStride;
+        vx_size corners_iter;
+        int kp_iter;
+        for (short level = 0; level < nlevels; ++level) {
             vector<cv::KeyPoint> vToDistributeKeys;
             vToDistributeKeys.reserve(nfeatures*10);
 
-            vx_size corners_count = 0;
-            vxQueryArray(fastCorners.at(level), VX_ARRAY_NUMITEMS, &corners_count, sizeof( corners_count));
+            vxQueryArray(IC_AnglesCorners.at(level), VX_ARRAY_NUMITEMS, &corners_count, sizeof( corners_count));
 
             if (corners_count > 0) {
-                vx_size kpStride;
-                vx_map_id fastKpMapId;
-                vx_uint8 * fastKpBuf;
+                ERROR_CHECK_STATUS( vxMapArrayRange(IC_AnglesCorners.at(level), 0, corners_count,
+                                                    &IC_AnglesKpMapId, &kpStride, ( void ** ) &IC_AnglesKpBuf, VX_READ_ONLY, VX_MEMORY_TYPE_HOST, 0 ) );
 
-                ERROR_CHECK_STATUS( vxMapArrayRange(fastCorners.at(level), 0, corners_count, &fastKpMapId, &kpStride, ( void ** ) &fastKpBuf, VX_READ_ONLY, VX_MEMORY_TYPE_HOST, 0 ) );
-
-                vx_map_id IC_AnglesKpMapId;
-                vx_uint8 * IC_AnglesKpBuf;
-                ERROR_CHECK_STATUS( vxMapArrayRange(IC_AnglesCorners.at(level), 0, corners_count, &IC_AnglesKpMapId, &kpStride, ( void ** ) &IC_AnglesKpBuf, VX_READ_ONLY, VX_MEMORY_TYPE_HOST, 0 ) );
-
-                for( vx_size j = 0; j < corners_count; j++ ) {
-                    vx_keypoint_t kp = vxArrayItem(vx_keypoint_t, fastKpBuf, j, kpStride);
-                    vx_keypoint_t kp1 = vxArrayItem(vx_keypoint_t, IC_AnglesKpBuf, j, kpStride);
-
+                for(corners_iter = 0; corners_iter < corners_count; ++corners_iter) {
                     cv::KeyPoint cvKp;
-                    cvKp.pt.x = kp.x;
-                    cvKp.pt.y = kp.y;
-                    cvKp.angle = kp1.orientation;
+                    cvKp.pt.x = vxArrayItem(vx_keypoint_t, IC_AnglesKpBuf, corners_iter, kpStride).x;
+                    cvKp.pt.y = vxArrayItem(vx_keypoint_t, IC_AnglesKpBuf, corners_iter, kpStride).y;
+                    cvKp.angle = vxArrayItem(vx_keypoint_t, IC_AnglesKpBuf, corners_iter, kpStride).orientation;
                     vToDistributeKeys.emplace_back(cvKp);
                 }
-                ERROR_CHECK_STATUS( vxUnmapArrayRange(fastCorners.at(level), fastKpMapId ) );
                 ERROR_CHECK_STATUS( vxUnmapArrayRange(IC_AnglesCorners.at(level), IC_AnglesKpMapId ));
             }
 
-            vector<KeyPoint> & keypoints = allKeypoints[level];
-            keypoints.reserve(corners_count);
+            allKeypoints[level].reserve(corners_count);
+            allKeypoints[level] = DistributeOctTree(vToDistributeKeys, 0, cameraWidth * mvInvScaleFactor.at(level),0,imgLevelHeight.at(level),mnFeaturesPerLevel[level], level);
+            scaledPatchSize = PATCH_SIZE*mvScaleFactor[level];
 
-            keypoints = DistributeOctTree(vToDistributeKeys, 0, cameraWidth * mvInvScaleFactor.at(level),0, cameraHeight * mvInvScaleFactor.at(level),mnFeaturesPerLevel[level], level);
-
-            const int scaledPatchSize = PATCH_SIZE*mvScaleFactor[level];
-            const int nkps = keypoints.size();
-            for(int i=0; i<nkps ; i++)
+            for(kp_iter=0; kp_iter<allKeypoints[level].size(); ++kp_iter)
             {
-                keypoints[i].octave=level;
-                keypoints[i].size = scaledPatchSize;
+                allKeypoints[level][kp_iter].octave=level;
+                allKeypoints[level][kp_iter].size = scaledPatchSize;
             }
         }
     }
@@ -780,7 +771,6 @@ namespace ORB_SLAM2
         void *vxImagePtr;
         vx_map_id vxImageMapId;
         vx_rectangle_t rect;
-        vx_size size = sizeof(rect.end_x);
         rect.start_x = 0;
         rect.start_y = 0;
         rect.end_x = cameraWidth;
@@ -790,8 +780,9 @@ namespace ORB_SLAM2
         _image.getMat().copyTo(cvInputImg);
         vxUnmapImagePatch(vxInputImg, vxImageMapId);
 
+//auto s = std::chrono::system_clock::now();
         vxProcessGraph(graph);
-
+//std::cout << "vxProcessGraph: " << (((float)std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now() - s).count()) / (float)1000) << std::endl;
         vector < vector<KeyPoint> > allKeypoints;
 
         ComputeKeyPointsOctTree(allKeypoints);
@@ -813,34 +804,33 @@ namespace ORB_SLAM2
         _keypoints.reserve(nkeypoints);
 
         int offset = 0;
-        for (int level = 0; level < nlevels; ++level)
-        {
-            vector<KeyPoint>& keypoints = allKeypoints[level];
-            int nkeypointsLevel = (int)keypoints.size();
+        float scale;
 
-            if(nkeypointsLevel==0)
+        for (short level = 0; level < nlevels; ++level)
+        {
+            if((int)allKeypoints[level].size()==0)
                 continue;
 
-            vxQueryImage(gaussian7x7Images.at(level), VX_IMAGE_WIDTH, (void *)&(rect.end_x), size);
-            vxQueryImage(gaussian7x7Images.at(level), VX_IMAGE_HEIGHT, (void *)&(rect.end_y), size);
+            rect.end_x = imgLevelWidth.at(level);
+            rect.end_y = imgLevelHeight.at(level);
 
             vxMapImagePatch(gaussian7x7Images.at(level), &rect, 0, &vxImageMapId, &vxImageAddr, &vxImagePtr, VX_READ_AND_WRITE, VX_MEMORY_TYPE_HOST, 0);
             // Compute the descriptors
-            Mat desc = descriptors.rowRange(offset, offset + nkeypointsLevel);
-            computeDescriptors(cvOutputImages.at(level), keypoints, desc, pattern);
+            Mat desc = descriptors.rowRange(offset, offset + (int)allKeypoints[level].size());
 
-            offset += nkeypointsLevel;
+            computeDescriptors(cvOutputImages.at(level), allKeypoints[level], desc, pattern);
+            offset += (int)allKeypoints[level].size();
 
             // Scale keypoint coordinates
             if (level != 0)
             {
-                float scale = mvScaleFactor[level]; //getScale(level, firstLevel, scaleFactor);
-                for (vector<KeyPoint>::iterator keypoint = keypoints.begin(),
-                             keypointEnd = keypoints.end(); keypoint != keypointEnd; ++keypoint)
+                scale = mvScaleFactor[level]; //getScale(level, firstLevel, scaleFactor);
+                for (vector<KeyPoint>::iterator keypoint = allKeypoints[level].begin(),
+                             keypointEnd = allKeypoints[level].end(); keypoint != keypointEnd; ++keypoint)
                     keypoint->pt *= scale;
             }
             // And add the keypoints to the output
-            _keypoints.insert(_keypoints.end(), keypoints.begin(), keypoints.end());
+            _keypoints.insert(_keypoints.end(), allKeypoints[level].begin(), allKeypoints[level].end());
 
             vxUnmapImagePatch(gaussian7x7Images.at(level), vxImageMapId);
         }
@@ -856,31 +846,40 @@ namespace ORB_SLAM2
 
         vxInputImg = createVXImageFromCVMat(context, cvInputImg);
 
+        imgLevelWidth.resize(nlevels);
+        imgLevelHeight.resize(nlevels);
+
         vxPyramidImages.resize(nlevels);
         vxPyramidImages.at(0) = vxInputImg;
-        {
-            double scaleImageWidth = cameraWidth;
-            double scaleImageHeight = cameraHeight;
-            for (uint8_t i = 1; i < nlevels; ++i) {
-                scaleImageWidth *= myScaleFactor;
-                scaleImageHeight *= myScaleFactor;
 
-                vxPyramidImages.at(i) = vxCreateVirtualImage(graph, scaleImageWidth, scaleImageHeight, VX_DF_IMAGE_U8);
-            }
+        imgLevelWidth.at(0) = cameraWidth;
+        imgLevelHeight.at(0) = cameraHeight;
+        for (short i = 1; i < nlevels; ++i) {
+            imgLevelWidth.at(i) = imgLevelWidth.at(i - 1) * myScaleFactor;
+            imgLevelHeight.at(i) = imgLevelHeight.at(i - 1) * myScaleFactor;
+            vxPyramidImages.at(i) = vxCreateVirtualImage(graph, imgLevelWidth.at(i), imgLevelHeight.at(i), VX_DF_IMAGE_U8);
         }
+
 
         for(uint8_t i = 1; i < nlevels; ++i) {
             scaleNodes.at(i - 1) = vxScaleImageNode(graph, vxPyramidImages.at(i - 1), vxPyramidImages.at(i), VX_INTERPOLATION_BILINEAR);
+
+            if (i < 4) {
+                vxSetNodeTarget(scaleNodes.at(i - 1), NVX_TARGET_GPU, NULL);
+            }
+            else {
+                vxSetNodeTarget(scaleNodes.at(i - 1), NVX_TARGET_CPU, NULL);
+            }
         }
 
-        vx_float32 fast_strength_thresh  = 20.0f;
+        vx_float32 fast_strength_thresh  = 7.0f;
         vx_size num_corners_value;
         {
-            vx_size vxArraySize = 30 * 1000;
-            fastCorners.at(0) = vxCreateArray(context, VX_TYPE_KEYPOINT, vxArraySize);
+            vx_size vxArraySize = 9 * 500;
+            fastCorners.at(0) = vxCreateVirtualArray(graph, VX_TYPE_KEYPOINT, vxArraySize);
             for (uint8_t i = 1; i < nlevels; ++i) {
-                vxArraySize *= myScaleFactor;
-                fastCorners.at(i) = vxCreateArray(context, VX_TYPE_KEYPOINT, vxArraySize);
+                vxArraySize *= myScaleFactor * 1.1;
+                fastCorners.at(i) = vxCreateVirtualArray(graph, VX_TYPE_KEYPOINT, vxArraySize);
             }
         }
 
@@ -890,39 +889,52 @@ namespace ORB_SLAM2
         for(uint8_t i = 0; i < nlevels; ++i) {
             num_corners.at(i) = vxCreateScalar( context, VX_TYPE_SIZE, &num_corners_value );
         }
+
+//std::vector<vx_scalar> strength_thresh(nlevels);
+        //  for(uint8_t i = 0; i < nlevels; ++i) {
+        //    strength_thresh.at(i) = vxCreateScalar( context, VX_TYPE_FLOAT32, &fast_strength_thresh );
+        //}
+
         for(uint8_t i = 0; i < nlevels; ++i) {
-            fastCornersNodes.at(i) = nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 9, fast_strength_thresh, 6, num_corners.at(i));
+            //fastCornersNodes.at(i) = vxFastCornersNode(graph,
+            //                                       vxPyramidImages.at(i),
+            //                                   strength_thresh.at(i),
+            //                               vx_true_e,
+            //                           fastCorners.at(i),
+            //                       num_corners.at(i));
+            fastCornersNodes.at(i) = nvxFastTrackNode(graph, vxPyramidImages.at(i), fastCorners.at(i), nullptr, nullptr, 12, fast_strength_thresh, 6, num_corners.at(i));
         }
 
-        u_max = createUMax(context, HALF_PATCH_SIZE);
 
         {
-            vx_size vxArraySize = 30 * 1000;
+            vx_size vxArraySize = 9 * 500;
             IC_AnglesCorners.at(0) = vxCreateArray(context, VX_TYPE_KEYPOINT, vxArraySize);
             for (uint8_t i = 1; i < nlevels; ++i) {
-                vxArraySize *= myScaleFactor;
+                vxArraySize *= myScaleFactor * 1.1;
                 IC_AnglesCorners.at(i) = vxCreateArray(context, VX_TYPE_KEYPOINT, vxArraySize);
             }
         }
+
         for(uint8_t i = 0; i < nlevels; ++i) {
-            IC_AnglesNodes.at(i) = IC_AnglesNode(graph, vxPyramidImages.at(i), fastCorners.at(i), u_max, IC_AnglesCorners.at(i));
-        }
-
-        {
-            double outputImageWidth = cameraWidth, outputImageHeight = cameraHeight;
-            cvOutputImages.at(0) = cv::Mat(outputImageHeight, outputImageWidth, CV_8UC1);
-            for (uint8_t i = 1; i < nlevels; ++i) {
-                outputImageWidth *= myScaleFactor;
-                outputImageHeight *= myScaleFactor;
-
-                cvOutputImages.at(i) = cv::Mat(outputImageHeight, outputImageWidth, CV_8UC1);
+            if (i < 6) {
+                IC_AnglesNodes.at(i) = IC_AnglesNodeGpu(graph, vxPyramidImages.at(i), fastCorners.at(i),
+                                                        IC_AnglesCorners.at(i));
+            }
+            else {
+                IC_AnglesNodes.at(i) = IC_AnglesNodeCpu(graph, vxPyramidImages.at(i), fastCorners.at(i),
+                                                        IC_AnglesCorners.at(i));
             }
         }
+
+        for (uint8_t i = 0; i < nlevels; ++i) {
+            cvOutputImages.at(i) = cv::Mat(imgLevelHeight.at(i), imgLevelWidth.at(i), CV_8UC1);
+        }
+
         for (uint8_t i = 0; i < nlevels; ++i) {
             gaussian7x7Images.at(i) = createVXImageFromCVMat(context, cvOutputImages.at(i));
         }
 
-        vx_int32 gaussian7x7Coefs[7][7] = {
+        vx_int16  gaussian7x7Coefs[7][7] = {
                 {1, 2,  3,  4,  3, 2, 1},
                 {2, 4,  6,  7,  6, 4, 2},
                 {3, 6,  9, 10,  9, 6, 3},
@@ -933,7 +945,7 @@ namespace ORB_SLAM2
         };
 
         vx_convolution gaussian7x7 = vxCreateConvolution(context, 7, 7);
-        vxCopyConvolutionCoefficients(gaussian7x7, (vx_int32*)gaussian7x7Coefs,
+        vxCopyConvolutionCoefficients(gaussian7x7, (vx_int16*)gaussian7x7Coefs,
                                       VX_WRITE_ONLY,
                                       VX_MEMORY_TYPE_HOST);
         vx_uint32 scale = 256;
@@ -952,6 +964,11 @@ namespace ORB_SLAM2
         for(auto& e: strength_thresh) {
             vxReleaseScalar(&e);
         }
+        for(auto& e: fastCorners) {
+            vxReleaseArray(&e);
+        }
+
+        vxReleaseConvolution(&gaussian7x7);
     }
 
 } //namespace ORB_SLAM
