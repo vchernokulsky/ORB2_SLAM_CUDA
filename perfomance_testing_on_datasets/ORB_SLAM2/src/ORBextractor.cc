@@ -864,7 +864,7 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
         for(uint8_t i = 1; i < nlevels; ++i) {
             scaleNodes.at(i - 1) = vxScaleImageNode(graph, vxPyramidImages.at(i - 1), vxPyramidImages.at(i), VX_INTERPOLATION_BILINEAR);
 
-            if (i < 4) {
+            if (i < 8) {
                 vxSetNodeTarget(scaleNodes.at(i - 1), NVX_TARGET_GPU, NULL);
             }
             else {
@@ -916,7 +916,7 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
         }
 
         for(uint8_t i = 0; i < nlevels; ++i) {
-                if (i < 6) {
+                if (i < 8) {
                     IC_AnglesNodes.at(i) = IC_AnglesNodeGpu(graph, vxPyramidImages.at(i), fastCorners.at(i),
                                                             IC_AnglesCorners.at(i));
                 }
@@ -967,7 +967,9 @@ void ORBextractor::operator()( InputArray _image, InputArray _mask, vector<KeyPo
         for(auto& e: fastCorners) {
             vxReleaseArray(&e);
         }
-
+        for(short i = 1; i < 8; ++i) {
+            vxReleaseImage(&vxPyramidImages.at(i));
+        }
         vxReleaseConvolution(&gaussian7x7);
     }
 
